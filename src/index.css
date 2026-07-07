@@ -450,12 +450,13 @@ body.loading {
   grid-template-columns: repeat(3, 1fr);
   gap: 40px;
   width: 100%;
+  max-width: 820px; /* Reduced by ~19.5% to shrink cards and leave more whitespace */
   z-index: 2;
 }
 
 .mega-grid.cols-2 {
   grid-template-columns: repeat(2, 1fr);
-  max-width: 600px; /* Adjusted to keep consistent image sizing with 3-column dropdowns */
+  max-width: 533px; /* Reduced proportionally to match the card size of the 3-column dropdowns */
 }
 
 .mega-card {
