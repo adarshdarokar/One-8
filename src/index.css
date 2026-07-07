@@ -146,7 +146,10 @@ body.loading {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   transform: translateY(-20px);
   opacity: 0;
-  transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 1.1s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.3s ease,
+              border-color 0.3s ease;
 }
 
 .navbar.visible {
@@ -154,33 +157,41 @@ body.loading {
   transform: translateY(0);
 }
 
-.navbar.menu-open {
+.navbar.menu-open,
+.navbar.scrolled {
   background: #ffffff !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-.navbar.menu-open .nav-item {
-  color: #555555 !important;
+.navbar.menu-open .nav-item,
+.navbar.scrolled .nav-item {
+  color: #707070 !important;
 }
 
-.navbar.menu-open .nav-item::after {
+.navbar.menu-open .nav-item::after,
+.navbar.scrolled .nav-item::after {
   background-color: #000000 !important;
 }
 
 .navbar.menu-open .nav-item:hover,
-.navbar.menu-open .nav-item.active {
+.navbar.menu-open .nav-item.active,
+.navbar.scrolled .nav-item:hover,
+.navbar.scrolled .nav-item.active {
   color: #000000 !important;
 }
 
-.navbar.menu-open .nav-btn-icon {
-  color: #555555 !important;
+.navbar.menu-open .nav-btn-icon,
+.navbar.scrolled .nav-btn-icon {
+  color: #707070 !important;
 }
 
-.navbar.menu-open .nav-btn-icon:hover {
+.navbar.menu-open .nav-btn-icon:hover,
+.navbar.scrolled .nav-btn-icon:hover {
   color: #000000 !important;
 }
 
-.navbar.menu-open .nav-logo {
+.navbar.menu-open .nav-logo,
+.navbar.scrolled .nav-logo {
   filter: invert(1); /* Invert white logo to black logo */
 }
 
@@ -221,10 +232,10 @@ body.loading {
 }
 
 .nav-logo {
-  height: 32px;
+  height: 42px; /* Increased from 32px by ~30% */
   width: auto;
   object-fit: contain;
-  transition: transform var(--transition-fast);
+  transition: filter 0.3s ease, transform var(--transition-fast);
 }
 
 .nav-logo:hover {
@@ -240,7 +251,7 @@ body.loading {
   text-decoration: none;
   position: relative;
   padding: 8px 0;
-  transition: color var(--transition-fast);
+  transition: color 0.3s ease;
   text-transform: uppercase;
 }
 
@@ -302,7 +313,7 @@ body.loading {
   top: 0;
   left: 0;
   width: 100%;
-  height: 480px; /* Split column menu area */
+  height: 560px; /* Increased to accommodate full size images */
   background: #ffffff; /* White background */
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   z-index: 900;
@@ -423,13 +434,13 @@ body.loading {
   position: absolute;
   bottom: 0px;
   right: 0px;
-  width: 360px;
-  height: 360px;
+  width: 500px; /* Huge scale watermark */
+  height: 187px; /* 2.668 aspect ratio matching logo dimensions */
   background-image: url('/assets/logo/one18.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: bottom right;
-  filter: grayscale(1) invert(0.15) opacity(0.02); /* Grey watermark with very low opacity */
+  filter: invert(1) opacity(0.03); /* Inverted to dark color with very low opacity on white background */
   pointer-events: none;
   z-index: 1;
 }
@@ -444,7 +455,7 @@ body.loading {
 
 .mega-grid.cols-2 {
   grid-template-columns: repeat(2, 1fr);
-  max-width: 760px;
+  max-width: 600px; /* Adjusted to keep consistent image sizing with 3-column dropdowns */
 }
 
 .mega-card {
@@ -456,32 +467,33 @@ body.loading {
 
 .mega-img-wrapper {
   width: 100%;
-  height: 220px;
-  background: #fcfcfc;
-  border: 1px solid #ebebeb;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  display: block;
+  position: relative;
   overflow: hidden;
-  padding: 20px;
-  transition: border-color var(--transition-medium), background-color var(--transition-medium);
+  padding: 0;
+  box-shadow: none;
 }
 
 .mega-img-wrapper img {
-  max-height: 95%;
-  max-width: 95%;
-  object-fit: contain;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 4px; /* subtle rounded corners */
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .mega-card:hover .mega-img-wrapper {
-  background: #f7f7f7;
-  border-color: #dcdcdc;
+  background: transparent;
+  border-color: transparent;
 }
 
 .mega-card:hover .mega-img-wrapper img {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .mega-card-title {

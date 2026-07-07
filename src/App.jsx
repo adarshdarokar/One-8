@@ -5,16 +5,22 @@ import Hero from './components/Hero.jsx';
 
 function App() {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showHero, setShowHero] = useState(false);
 
   return (
     <>
       {/* Cinematic Particle Loader Canvas overlay */}
-      {!isLoaded && <Loader onLoaded={() => setIsLoaded(true)} />}
+      {!isLoaded && (
+        <Loader 
+          onStartTransition={() => setShowHero(true)} 
+          onLoaded={() => setIsLoaded(true)} 
+        />
+      )}
       
       {/* Main Website Container */}
-      <div id="app-container" className={isLoaded ? "visible" : "hidden"}>
-        <Navbar isLoaded={isLoaded} />
-        <Hero isLoaded={isLoaded} />
+      <div id="app-container" className={showHero ? "visible" : "hidden"}>
+        <Navbar isLoaded={showHero} />
+        <Hero isLoaded={showHero} />
       </div>
     </>
   );

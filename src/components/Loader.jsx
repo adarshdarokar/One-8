@@ -1,288 +1,276 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import { CustomEase } from 'gsap/CustomEase';
 
-// ==========================================================================
-// PARTICLE ENGINE CLASSES
-// ==========================================================================
+gsap.registerPlugin(CustomEase);
 
-class Particle {
-  constructor(tx, ty, color, width, height) {
+// Custom back ease for individual particles' overshoot
+function easeOutBack(t, c1 = 1.70158) {
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+class LoaderParticle {
+  constructor(tx, ty, r, g, b, baseAlpha) {
     this.tx = tx;
     this.ty = ty;
-    this.color = color;
-    this.width = width;
-    this.height = height;
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.baseAlpha = baseAlpha / 255;
     
-    const edge = Math.floor(Math.random() * 4);
-    const offset = 60;
-    if (edge === 0) { // Top
-      this.x = Math.random() * width;
-      this.y = -offset;
-    } else if (edge === 1) { // Right
-      this.x = width + offset;
-      this.y = Math.random() * height;
-    } else if (edge === 2) { // Bottom
-      this.x = Math.random() * width;
-      this.y = height + offset;
-    } else { // Left
-      this.x = -offset;
-      this.y = Math.random() * height;
-    }
+    // Scattered starting position across the viewport
+    this.startX = Math.random() * window.innerWidth;
+    this.startY = Math.random() * window.innerHeight;
     
-    this.vx = 0;
-    this.vy = 0;
-    this.size = Math.random() * 1.8 + 0.6;
+    // Ultra tiny dust-sized particles
+    this.size = Math.random() * 1.0 + 0.6;
+    
+    // Delay arrival factor to create organic flow
+    this.delay = Math.random() * 0.45;
+    
+    // Overshoot variables
+    this.overshootAmount = Math.random() * 1.2 + 0.5;
+    
+    // Floating drift parameters
+    this.driftSpeed = Math.random() * 1.2 + 0.4;
+    this.driftRange = Math.random() * 30 + 10;
+    this.angleOffset = Math.random() * Math.PI * 2;
+    
+    // Radial dispersion parameters for dissolve
+    this.dissolveSpeed = Math.random() * 250 + 100;
+    this.windX = (Math.random() - 0.5) * 80;
+    this.windY = -Math.random() * 120 - 40;
+    
+    this.x = this.startX;
+    this.y = this.startY;
     this.alpha = 0;
-    this.life = 1.0;
-    this.reached = false;
-    this.history = [];
-    this.historyLength = 5;
-    
-    this.speed = Math.random() * 0.035 + 0.015;
-    this.friction = Math.random() * 0.05 + 0.88;
+    this.finalAlpha = 0;
+    this.finalR = r;
+    this.finalG = g;
+    this.finalB = b;
   }
 
-  update(time, transitionStarted) {
-    this.history.push({ x: this.x, y: this.y });
-    if (this.history.length > this.historyLength) {
-      this.history.shift();
-    }
-
-    if (!this.reached) {
-      if (this.alpha < 1) this.alpha += 0.06;
-      
-      const dx = this.tx - this.x;
-      const dy = this.ty - this.y;
-      const dist = Math.hypot(dx, dy);
-      
-      if (dist > 2.5) {
-        const force = Math.min(dist * this.speed, 6);
-        const ax = (dx / dist) * force;
-        const ay = (dy / dist) * force;
-        
-        const angle = Math.sin(this.x * 0.006 + time * 1.5) * Math.cos(this.y * 0.006 + time * 1.5) * Math.PI * 2;
-        const noiseStrength = 0.55;
-        const nx = Math.cos(angle) * noiseStrength;
-        const ny = Math.sin(angle) * noiseStrength;
-        
-        this.vx = this.vx * this.friction + ax + nx;
-        this.vy = this.vy * this.friction + ay + ny;
-        
-        this.x += this.vx;
-        this.y += this.vy;
-      } else {
-        this.x = this.tx;
-        this.y = this.ty;
-        this.reached = true;
+  update(time, emergence, formation, shimmer, dissolve, centerX, centerY, logoX, logoWidth) {
+    // 1. Calculate drift
+    const driftX = Math.sin(time * this.driftSpeed + this.angleOffset) * this.driftRange;
+    const driftY = Math.cos(time * this.driftSpeed + this.angleOffset * 1.3) * this.driftRange;
+    
+    // 2. Compute formation step
+    let localT = (formation - this.delay) / (1 - this.delay);
+    if (localT < 0) localT = 0;
+    if (localT > 1) localT = 1;
+    
+    const easeVal = easeOutBack(localT, this.overshootAmount);
+    
+    const formedX = (this.startX + driftX) * (1 - easeVal) + this.tx * easeVal;
+    const formedY = (this.startY + driftY) * (1 - easeVal) + this.ty * easeVal;
+    
+    // 3. Shimmer calculation
+    let shimmerBoost = 0;
+    if (shimmer > 0 && shimmer < 1) {
+      const sweepX = logoX - 60 + shimmer * (logoWidth + 120);
+      const distToSweep = Math.abs(formedX - sweepX);
+      const sweepRange = 50;
+      if (distToSweep < sweepRange) {
+        const factor = 1 - distToSweep / sweepRange;
+        shimmerBoost = factor * 0.7; // subtle brightness sweep
       }
+    }
+    
+    // 4. Position and alpha calculations by phase
+    if (dissolve > 0) {
+      const dx = this.tx - centerX;
+      const dy = this.ty - centerY;
+      const dist = Math.hypot(dx, dy) || 1;
+      
+      const disperseX = (dx / dist) * (dissolve * this.dissolveSpeed);
+      const disperseY = (dy / dist) * (dissolve * this.dissolveSpeed);
+      
+      const windXForce = dissolve * this.windX;
+      const windYForce = dissolve * this.windY;
+      
+      this.x = this.tx + disperseX + windXForce;
+      this.y = this.ty + disperseY + windYForce;
+      this.alpha = this.baseAlpha * (1 - dissolve);
+    } else if (formation > 0) {
+      this.x = formedX;
+      this.y = formedY;
+      this.alpha = this.baseAlpha * Math.min(localT * 2, 1);
     } else {
-      this.life -= transitionStarted ? 0.04 : 0.02;
-      this.alpha = Math.max(0, this.life);
-      
-      this.x = this.tx + (Math.random() - 0.5) * 0.4;
-      this.y = this.ty + (Math.random() - 0.5) * 0.4;
+      this.x = this.startX + driftX;
+      this.y = this.startY + driftY;
+      this.alpha = this.baseAlpha * emergence;
     }
+    
+    // Final values with shimmer boost
+    this.finalAlpha = Math.min(1, this.alpha + shimmerBoost * 0.3);
+    this.finalR = Math.floor(Math.min(255, this.r + shimmerBoost * (255 - this.r) * 0.9));
+    this.finalG = Math.floor(Math.min(255, this.g + shimmerBoost * (255 - this.g) * 0.9));
+    this.finalB = Math.floor(Math.min(255, this.b + shimmerBoost * (255 - this.b) * 0.9));
   }
 
   draw(ctx) {
-    if (this.alpha <= 0) return;
-    
-    if (this.history.length > 1) {
-      ctx.beginPath();
-      ctx.moveTo(this.history[0].x, this.history[0].y);
-      for (let i = 1; i < this.history.length; i++) {
-        ctx.lineTo(this.history[i].x, this.history[i].y);
-      }
-      ctx.strokeStyle = this.color.replace(/[\d.]+\)$/, `${this.alpha * 0.28})`);
-      ctx.lineWidth = this.size * 0.7;
-      ctx.stroke();
-    }
-    
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = this.color.replace(/[\d.]+\)$/, `${this.alpha})`);
-    ctx.fill();
+    if (this.finalAlpha <= 0) return;
+    ctx.fillStyle = `rgba(${this.finalR}, ${this.finalG}, ${this.finalB}, ${this.finalAlpha})`;
+    ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
   }
 }
 
-class AmbientParticle {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-    this.reset();
-    this.y = Math.random() * height;
-  }
-
-  reset() {
-    this.x = Math.random() * this.width;
-    this.y = this.height + 20;
-    this.vx = (Math.random() - 0.5) * 0.4;
-    this.vy = -(Math.random() * 0.65 + 0.2);
-    this.size = Math.random() * 1.3 + 0.4;
-    this.alpha = Math.random() * 0.35 + 0.08;
-    this.maxAlpha = this.alpha;
-    this.life = 1.0;
-    this.decay = Math.random() * 0.0025 + 0.0008;
-  }
-
-  update(time) {
-    this.y += this.vy;
-    this.x += this.vx + Math.sin(this.y * 0.012 + time) * 0.15;
-    
-    this.life -= this.decay;
-    this.alpha = this.maxAlpha * this.life;
-    
-    if (this.life <= 0 || this.y < -20) {
-      this.reset();
-    }
-  }
-
-  draw(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(220, 220, 220, ${this.alpha})`;
-    ctx.fill();
-  }
-}
-
-// ==========================================================================
-// OFFSCREEN PIXEL SAMPLING
-// ==========================================================================
-
-function sampleLogo(img) {
-  const sampleSize = 320;
+// Offscreen pixel sampling helper
+function sampleLogo(img, sampleWidth, sampleHeight) {
   const offscreen = document.createElement('canvas');
-  offscreen.width = sampleSize;
-  offscreen.height = sampleSize;
+  offscreen.width = sampleWidth;
+  offscreen.height = sampleHeight;
   const oCtx = offscreen.getContext('2d');
-  oCtx.drawImage(img, 0, 0, sampleSize, sampleSize);
+  oCtx.drawImage(img, 0, 0, sampleWidth, sampleHeight);
   
-  const imgData = oCtx.getImageData(0, 0, sampleSize, sampleSize);
+  const imgData = oCtx.getImageData(0, 0, sampleWidth, sampleHeight);
   const data = imgData.data;
   
   const tempPoints = [];
-  const step = 4;
+  const step = 3;
   
-  for (let y = 0; y < sampleSize; y += step) {
-    for (let x = 0; x < sampleSize; x += step) {
-      const idx = (y * sampleSize + x) * 4;
+  for (let y = 0; y < sampleHeight; y += step) {
+    for (let x = 0; x < sampleWidth; x += step) {
+      const idx = (y * sampleWidth + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
       const alpha = data[idx + 3];
-      if (alpha > 128) {
-        tempPoints.push({ x, y });
+      
+      if (alpha > 40) {
+        tempPoints.push({ x, y, r, g, b, alpha });
       }
     }
   }
-  
-  tempPoints.sort((a, b) => a.x - b.x);
   return tempPoints;
 }
 
-// ==========================================================================
-// LOADER COMPONENT
-// ==========================================================================
-
-function Loader({ onLoaded }) {
+function Loader({ onStartTransition, onLoaded }) {
   const canvasRef = useRef(null);
   const loaderContainerRef = useRef(null);
-  const [percentText, setPercentText] = useState('0%');
+  const percentRef = useRef(null);
+  
+  const assetsLoadedRef = useRef(false);
+  const currentProgressRef = useRef(0);
+  const waitingRef = useRef(false);
 
   useEffect(() => {
+    // Register custom easing for luxury curves
+    CustomEase.create("luxuryCurve", "0.16, 1, 0.3, 1");
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
     const logoImg = new Image();
-    let logoLoaded = false;
+    let particles = [];
+    let animationId = null;
+
+    let shoe1Loaded = false;
+    let shoe2Loaded = false;
+    let videoLoaded = false;
+    let videoTotalBytes = 1;
+    let videoLoadedBytes = 0;
+
+    // Timeline control parameters
+    const timeState = { time: 0 };
+    
+    let lerpedProgress = 0;
+
+    // Responsive size variables
     let logoWidth = 0;
     let logoHeight = 0;
     let logoX = 0;
     let logoY = 0;
-
-    let points = [];
-    let particles = [];
-    let ambientParticles = [];
-    let lastSpawnedIndex = 0;
-    let transitionStarted = false;
-
-    let shoe1Loaded = false;
-    let shoe2Loaded = false;
-    let videoTotalBytes = 1;
-    let videoLoadedBytes = 0;
-    let videoLoaded = false;
-
-    let timeProgress = 0;
-    let currentProgress = 0;
-    let lerpedProgress = 0;
-
-    const animationState = {
-      sweepProgress: -0.6,
-      logoScale: 1.0,
-      sweepActive: false
-    };
+    let centerX = 0;
+    let centerY = 0;
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       
-      const targetSize = Math.min(window.innerWidth * 0.42, window.innerHeight * 0.42, 300);
-      logoWidth = targetSize;
-      logoHeight = targetSize;
-      
+      logoWidth = Math.min(window.innerWidth * 0.7, 400);
+      logoHeight = logoWidth / 2.668;
       logoX = (window.innerWidth - logoWidth) / 2;
-      logoY = (window.innerHeight - logoHeight) / 2 - 20;
+      logoY = (window.innerHeight - logoHeight) / 2;
       
-      if (points.length > 0) {
-        particles.forEach(p => {
-          if (p.target) {
-            p.tx = logoX + (p.target.x / 320) * logoWidth;
-            p.ty = logoY + (p.target.y / 320) * logoHeight;
-          }
-        });
+      centerX = logoX + logoWidth / 2;
+      centerY = logoY + logoHeight / 2;
+      
+      particles.forEach(p => {
+        p.tx = logoX + (p.sourceX / 320) * logoWidth;
+        p.ty = logoY + (p.sourceY / 120) * logoHeight;
+      });
+      
+      if (percentRef.current) {
+        percentRef.current.style.top = `${logoY + logoHeight + 25}px`;
       }
     }
 
     window.addEventListener('resize', resizeCanvas);
 
-    // Orchestrate GSAP timeline transition when load is done
-    function startFinalTransition() {
-      if (transitionStarted) return;
-      transitionStarted = true;
-      animationState.sweepActive = true;
+    // Create the GSAP animation timeline for first 3 phases
+    const tl = gsap.timeline({
+      paused: true
+    });
+
+    // Animate from 0 to 3.7 seconds (emergence, formation, hold/shimmer)
+    tl.to(timeState, {
+      time: 3.7,
+      duration: 3.7,
+      ease: "none" // Progression is linear, easing is handled per-particle
+    });
+
+    // Checkpoint at 3.7s (end of shimmer, logo complete)
+    tl.call(() => {
+      if (!assetsLoadedRef.current || currentProgressRef.current < 100) {
+        tl.pause();
+        waitingRef.current = true;
+      } else {
+        triggerDissolve();
+      }
+    });
+
+    function triggerDissolve() {
+      waitingRef.current = false;
       
-      const tl = gsap.timeline({
-        onComplete: () => {
-          gsap.to(loaderContainerRef.current, {
-            opacity: 0,
-            duration: 1.0,
-            onComplete: () => {
-              document.body.classList.remove('loading');
-              onLoaded(); // Notify parent App container to mount main view
-            }
-          });
-        }
+      // Wait 0.3 seconds after reaching 100% before starting the dissolve phase
+      gsap.delayedCall(0.3, () => {
+        if (onStartTransition) onStartTransition();
+        
+        // Dissolve phase (0.8s) from time 3.7 to 4.5
+        gsap.to(timeState, {
+          time: 4.5,
+          duration: 0.8,
+          ease: "luxuryCurve",
+          onComplete: () => {
+            document.body.classList.remove('loading');
+            onLoaded(); // Cleanly unmount loader
+          }
+        });
       });
-      
-      tl.to(animationState, {
-        sweepProgress: 1.6,
-        logoScale: 1.02,
-        duration: 1.2,
-        ease: 'power2.inOut'
-      });
-      
-      tl.to({}, { duration: 0.3 });
     }
 
-    // Asset preloader
+    function checkAssetsLoaded() {
+      if (shoe1Loaded && shoe2Loaded && videoLoaded) {
+        assetsLoadedRef.current = true;
+        // If we are waiting at 3.7s and the lerp reaches 100, triggerDissolve will fire from the animation loop
+      }
+    }
+
+    // Asset preloading
     function preloadAssets() {
       const img1 = new Image();
       img1.src = '/assets/Hero-Images/shoe.webp';
-      img1.onload = () => { shoe1Loaded = true; };
-      img1.onerror = () => { shoe1Loaded = true; };
+      img1.onload = () => { shoe1Loaded = true; checkAssetsLoaded(); };
+      img1.onerror = () => { shoe1Loaded = true; checkAssetsLoaded(); };
 
       const img2 = new Image();
       img2.src = '/assets/Hero-Images/shoe-2.jpg';
-      img2.onload = () => { shoe2Loaded = true; };
-      img2.onerror = () => { shoe2Loaded = true; };
+      img2.onload = () => { shoe2Loaded = true; checkAssetsLoaded(); };
+      img2.onerror = () => { shoe2Loaded = true; checkAssetsLoaded(); };
 
       const xhr = new XMLHttpRequest();
       xhr.open('GET', '/assets/video/One8.mp4', true);
@@ -298,170 +286,119 @@ function Loader({ onLoaded }) {
       xhr.onload = () => {
         if (xhr.status === 200) {
           const videoBlob = xhr.response;
-          const videoUrl = URL.createObjectURL(videoBlob);
-          window.preloadedVideoUrl = videoUrl; // Stash on window for HeroBackground
-          videoLoaded = true;
+          window.preloadedVideoUrl = URL.createObjectURL(videoBlob);
         } else {
           window.preloadedVideoUrl = '/assets/video/One8.mp4';
-          videoLoaded = true;
         }
+        videoLoaded = true;
+        checkAssetsLoaded();
       };
       
       xhr.onerror = () => {
         window.preloadedVideoUrl = '/assets/video/One8.mp4';
         videoLoaded = true;
+        checkAssetsLoaded();
       };
       
       xhr.send();
     }
 
-    // Main Canvas animation render loop
+    // Main animation loop
     let lastTime = Date.now();
-    let animationId = null;
 
     function animate() {
       animationId = requestAnimationFrame(animate);
       
       const now = Date.now();
-      const deltaTime = Math.min((now - lastTime) * 0.001, 0.1);
       const time = now * 0.001;
       lastTime = now;
       
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      let assetsProgress = 0;
-      if (logoLoaded) {
-        if (shoe1Loaded) assetsProgress += 5;
-        if (shoe2Loaded) assetsProgress += 5;
-        if (videoLoaded) {
-          assetsProgress += 90;
-        } else {
-          assetsProgress += (videoLoadedBytes / videoTotalBytes) * 90;
-        }
+      const t = timeState.time;
+      let emergence = 0;
+      let formation = 0;
+      let shimmer = 0;
+      let dissolve = 0;
+
+      // Map timeState.time to individual phase parameters
+      if (t < 1.3) {
+        emergence = t / 1.3;
+      } else if (t < 2.9) {
+        emergence = 1;
+        formation = (t - 1.3) / 1.6;
+      } else if (t < 3.7) {
+        emergence = 1;
+        formation = 1;
+        shimmer = (t - 2.9) / 0.8;
+      } else {
+        emergence = 1;
+        formation = 1;
+        shimmer = 1;
+        dissolve = (t - 3.7) / 0.8;
       }
       
-      if (logoLoaded && timeProgress < 100) {
-        timeProgress += 0.48;
-        if (timeProgress > 100) timeProgress = 100;
+      // Calculate loading percentage
+      const timeProgress = (t / 3.7) * 100;
+      let assetProgress = 0;
+      if (shoe1Loaded) assetProgress += 5;
+      if (shoe2Loaded) assetProgress += 5;
+      if (videoLoaded) {
+        assetProgress += 90;
+      } else {
+        assetProgress += (videoTotalBytes > 0 ? (videoLoadedBytes / videoTotalBytes) * 90 : 0);
       }
       
-      currentProgress = Math.min(timeProgress, assetsProgress);
-      lerpedProgress += (currentProgress / 100 - lerpedProgress) * 0.07;
-      if (Math.abs(lerpedProgress - 1.0) < 0.0002) {
-        lerpedProgress = 1.0;
+      const targetProgress = Math.min(timeProgress, assetProgress);
+      currentProgressRef.current = targetProgress;
+      
+      // Smooth lerp count-up
+      lerpedProgress += (targetProgress - lerpedProgress) * 0.08;
+      if (Math.abs(lerpedProgress - 100) < 0.1 && targetProgress >= 100) {
+        lerpedProgress = 100;
       }
       
-      setPercentText(`${Math.floor(lerpedProgress * 100)}%`);
+      // Update DOM elements directly for high performance (bypass React render loop)
+      if (percentRef.current) {
+        percentRef.current.textContent = `Loading ${Math.floor(lerpedProgress)}%`;
+        percentRef.current.style.opacity = (1 - dissolve) * 0.35;
+      }
       
-      ambientParticles.forEach(ap => {
-        ap.update(time);
-        ap.draw(ctx);
+      // If we are waiting at 3.7s and the percentage reaches 100, trigger dissolve
+      if (waitingRef.current && lerpedProgress >= 100 && assetsLoadedRef.current) {
+        triggerDissolve();
+      }
+
+      // Clear canvas with dissolving background opacity
+      if (dissolve > 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bgAlpha = Math.max(0, 1 - dissolve);
+        ctx.fillStyle = `rgba(0, 0, 0, ${bgAlpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      // Update and draw particles
+      particles.forEach(p => {
+        p.update(time, emergence, formation, shimmer, dissolve, centerX, centerY, logoX, logoWidth);
+        p.draw(ctx);
       });
-      
-      if (logoLoaded) {
-        const currentRevealX = lerpedProgress * 320;
-        while (lastSpawnedIndex < points.length && points[lastSpawnedIndex].x <= currentRevealX) {
-          const pt = points[lastSpawnedIndex];
-          const tx = logoX + (pt.x / 320) * logoWidth;
-          const ty = logoY + (pt.y / 320) * logoHeight;
-          
-          const colors = [
-            'rgba(255, 255, 255, 1)', 
-            'rgba(225, 227, 230, 1)', 
-            'rgba(195, 200, 205, 1)', 
-            'rgba(165, 170, 175, 1)'
-          ];
-          const color = colors[Math.floor(Math.random() * colors.length)];
-          
-          const p = new Particle(tx, ty, color, canvas.width, canvas.height);
-          p.target = pt;
-          particles.push(p);
-          
-          lastSpawnedIndex++;
-        }
-        
-        ctx.save();
-        ctx.beginPath();
-        const revealX = logoX + lerpedProgress * logoWidth;
-        
-        ctx.moveTo(0, 0);
-        ctx.lineTo(revealX, 0);
-        
-        const waveHeight = 16;
-        const waveFreq = 0.022;
-        for (let y = 0; y <= canvas.height; y += 10) {
-          const wave = Math.sin(y * waveFreq + time * 5.5) * waveHeight * (1 - lerpedProgress);
-          ctx.lineTo(revealX + wave, y);
-        }
-        
-        ctx.lineTo(0, canvas.height);
-        ctx.lineTo(0, 0);
-        ctx.closePath();
-        ctx.clip();
-        
-        const dw = logoWidth * animationState.logoScale;
-        const dh = logoHeight * animationState.logoScale;
-        const dx = logoX - (dw - logoWidth) / 2;
-        const dy = logoY - (dh - logoHeight) / 2;
-        
-        ctx.drawImage(logoImg, dx, dy, dw, dh);
-        ctx.restore();
-        
-        if (animationState.sweepActive) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'source-atop';
-          
-          const progress = animationState.sweepProgress;
-          const dw = logoWidth * animationState.logoScale;
-          const dh = logoHeight * animationState.logoScale;
-          const dx = logoX - (dw - logoWidth) / 2;
-          const dy = logoY - (dh - logoHeight) / 2;
-          
-          const sweepWidth = 160;
-          const startX = dx - sweepWidth + progress * (dw + sweepWidth * 2);
-          const endX = startX + sweepWidth;
-          
-          const gradient = ctx.createLinearGradient(startX, dy, endX, dy + dh);
-          gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-          gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0)');
-          gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.7)');
-          gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0)');
-          gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-          
-          ctx.fillStyle = gradient;
-          ctx.fillRect(dx, dy, dw, dh);
-          ctx.restore();
-        }
-        
-        for (let i = particles.length - 1; i >= 0; i--) {
-          const p = particles[i];
-          p.update(time, transitionStarted);
-          p.draw(ctx);
-          
-          if (p.reached && p.life <= 0) {
-            particles.splice(i, 1);
-          }
-        }
-      }
-      
-      if (lerpedProgress >= 1.0 && !transitionStarted) {
-        startFinalTransition();
-      }
     }
 
     logoImg.src = '/assets/logo/one18.png';
     logoImg.onload = () => {
-      logoLoaded = true;
+      const points = sampleLogo(logoImg, 320, 120);
+      particles = points.map(pt => {
+        const p = new LoaderParticle(pt.x, pt.y, pt.r, pt.g, pt.b, pt.alpha);
+        p.sourceX = pt.x;
+        p.sourceY = pt.y;
+        return p;
+      });
+      
       resizeCanvas();
-      points = sampleLogo(logoImg);
-      
-      for (let i = 0; i < 90; i++) {
-        ambientParticles.push(new AmbientParticle(canvas.width, canvas.height));
-      }
-      
       animate();
       preloadAssets();
+      tl.play();
     };
 
     return () => {
@@ -470,14 +407,49 @@ function Loader({ onLoaded }) {
         cancelAnimationFrame(animationId);
       }
     };
-  }, [onLoaded]);
+  }, [onStartTransition, onLoaded]);
 
   return (
-    <div id="loader-container" ref={loaderContainerRef}>
-      <canvas id="loader-canvas" ref={canvasRef}></canvas>
-      <div id="loader-text-wrapper">
-        <div className="loader-label">LOADING</div>
-        <div id="loader-percentage">{percentText}</div>
+    <div 
+      id="loader-container" 
+      ref={loaderContainerRef}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'transparent',
+        zIndex: 9999,
+        pointerEvents: 'all'
+      }}
+    >
+      <canvas 
+        ref={canvasRef} 
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block'
+        }}
+      />
+      <div
+        ref={percentRef}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontFamily: 'var(--font-luxury)',
+          fontSize: '11px',
+          fontWeight: '300',
+          color: '#ffffff',
+          opacity: 0.35,
+          letterSpacing: '0.2em',
+          pointerEvents: 'none',
+          transition: 'opacity 0.5s ease',
+          textTransform: 'uppercase'
+        }}
+      >
+        Loading 0%
       </div>
     </div>
   );

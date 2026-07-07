@@ -1,69 +1,61 @@
-import React, { useRef } from 'react';
-import { gsap } from 'gsap';
-import { useGSAP } from '@gsap/react';
+import React, { useEffect, useRef } from 'react';
 
-gsap.registerPlugin(useGSAP);
-
-function HeroBackground({ isLoaded }) {
-  const containerRef = useRef(null);
+function HeroBackground({ isLoaded, currentSlide }) {
+  const videoRef = useRef(null);
   const videoSrc = window.preloadedVideoUrl || '/assets/video/One8.mp4';
 
-  useGSAP(() => {
-    if (!isLoaded) return;
-
-    // Trigger autoplay programmatically for both video elements
-    const videos = containerRef.current.querySelectorAll('.hero-video');
-    videos.forEach(video => {
-      video.play().catch(err => console.log('Autoplay blocked:', err));
-    });
-
-    // Stepped slideshow GSAP timeline
-    const tl = gsap.timeline({ repeat: -1 });
-    tl.set('.hero-track', { xPercent: 0 })
-      .to('.hero-track', {
-        xPercent: -25,
-        duration: 0.9,
-        ease: 'power3.inOut'
-      }, '+=2') // Image 1 holds for 2 seconds
-      .to('.hero-track', {
-        xPercent: -50,
-        duration: 0.9,
-        ease: 'power3.inOut'
-      }, '+=4') // Video holds for 4 seconds
-      .to('.hero-track', {
-        xPercent: -75,
-        duration: 0.9,
-        ease: 'power3.inOut'
-      }, '+=2') // Image 2 holds for 2 seconds
-      .to('.hero-track', {
-        xPercent: 0,
-        duration: 0
-      }); // Instant seamless reset to Panel 1 (which holds for 2 seconds)
-
-  }, { dependencies: [isLoaded], scope: containerRef });
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (currentSlide === 1) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(err => console.log('Autoplay blocked:', err));
+    } else {
+      videoRef.current.pause();
+    }
+  }, [currentSlide]);
 
   return (
-    <div className="hero-track-container" ref={containerRef}>
-      <div className="hero-track">
-        {/* Slide 1: Image */}
-        <div className="hero-slide">
-          <img src="/assets/Hero-Images/shoe.webp" className="shoe-img" alt="Nitro-Run Silencer" />
-        </div>
-        {/* Slide 2: Video */}
-        <div className="hero-slide">
-          <video className="hero-video" loop muted playsInline src={videoSrc}></video>
-        </div>
-        {/* Slide 3: Image */}
-        <div className="hero-slide">
-          <img src="/assets/Hero-Images/shoe-2.jpg" className="virat-img" alt="Chrome-Fusion Core" />
-        </div>
-        {/* Slide 4: Image (Duplicate for seamless loop) */}
-        <div className="hero-slide">
-          <img src="/assets/Hero-Images/shoe.webp" className="shoe-img" alt="Nitro-Run Silencer" />
-        </div>
+    <div className="absolute inset-0 w-full h-full z-1 overflow-hidden bg-black">
+      {/* Slide 1: Image (shoe-2.jpg) */}
+      <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+        currentSlide === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
+        <img 
+          src="/assets/Hero-Images/shoe-2.jpg" 
+          className="w-full h-full object-cover" 
+          style={{ objectPosition: '72% 15%' }} 
+          alt="Chrome-Fusion Core" 
+        />
       </div>
+
+      {/* Slide 2: Video (One8.mp4) */}
+      <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+        currentSlide === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
+        <video 
+          ref={videoRef} 
+          className="w-full h-full object-cover" 
+          loop 
+          muted 
+          playsInline 
+          src={videoSrc}
+        />
+      </div>
+
+      {/* Slide 3: Image (shoe.webp) */}
+      <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+        currentSlide === 2 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
+        <img 
+          src="/assets/Hero-Images/shoe.webp" 
+          className="w-full h-full object-cover" 
+          style={{ objectPosition: 'center 30%' }} 
+          alt="Nitro-Run Silencer" 
+        />
+      </div>
+
       {/* Uniform 30% Dark Overlay */}
-      <div className="hero-track-overlay"></div>
+      <div className="absolute inset-0 bg-black/30 z-20 pointer-events-none"></div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import MegaMenu from './MegaMenu.jsx';
 function Navbar({ isLoaded }) {
   const [activeMenu, setActiveMenu] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const closeTimeout = useRef(null);
 
   const openMegaMenu = (menuType) => {
@@ -25,14 +26,24 @@ function Navbar({ isLoaded }) {
   };
 
   useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+
     return () => {
       clearTimeout(closeTimeout.current);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
   return (
     <header 
-      className={`navbar ${isLoaded ? 'visible' : ''}`}
+      className={`navbar ${isLoaded ? 'visible' : ''} ${menuOpen ? 'menu-open' : ''} ${scrolled ? 'scrolled' : ''}`}
       onMouseLeave={requestMenuClose}
       onMouseEnter={cancelMenuClose}
     >
@@ -50,7 +61,10 @@ function Navbar({ isLoaded }) {
                 openMegaMenu(menu);
               }}
             >
-              {menu === 'calendar' ? 'Release Calendar' : menu}
+              {menu === 'featured' ? 'Featured' : 
+               menu === 'women' ? 'Women' : 
+               menu === 'men' ? 'Men' : 
+               menu === 'calendar' ? 'Release Calendar' : menu}
             </a>
           ))}
         </div>
@@ -66,7 +80,7 @@ function Navbar({ isLoaded }) {
         <div className="nav-right">
           <button className="nav-btn-icon" aria-label="Search">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
+              <circle cx="11" cy="11" r="8"></circle> 
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <span className="nav-icon-text">Search</span>
