@@ -82,7 +82,9 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
         {/* RIGHT CONTENT SECTION */}
         <div className="mega-menu-main">
           {/* Faded watermark logo background */}
-          <div className="mega-menu-watermark"></div>
+          <div className="mega-menu-watermark">
+            <img src="/assets/logo/watermark-0ne8.png" alt="One8 Watermark" />
+          </div>
 
           {/* Featured Panel Content */}
           {activeMenu === 'featured' && (

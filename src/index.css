@@ -430,19 +430,33 @@ body.loading {
 }
 
 /* WATERMARK */
-.mega-menu-watermark {
+.watermark {
   position: absolute;
-  bottom: 0px;
-  right: 0px;
-  width: 500px; /* Huge scale watermark */
-  height: 187px; /* 2.668 aspect ratio matching logo dimensions */
-  background-image: url('/assets/logo/one18.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: bottom right;
-  filter: invert(1) opacity(0.03); /* Inverted to dark color with very low opacity on white background */
+  right: -140px;
+  bottom: -120px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0.06;
   pointer-events: none;
-  z-index: 1;
+  user-select: none;
+  z-index: 0;
+}
+
+.watermark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+  filter: grayscale(100%);
+  opacity: 0.9;
 }
 
 .mega-grid {
@@ -661,6 +675,13 @@ body.loading {
   .mega-grid {
     gap: 20px;
   }
+
+  .watermark {
+    width: 240px;
+    height: 240px;
+    right: -105px;
+    bottom: -90px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -704,5 +725,12 @@ body.loading {
   
   #loader-percentage {
     font-size: 30px;
+  }
+
+  .watermark {
+    width: 170px;
+    height: 170px;
+    right: -75px;
+    bottom: -65px;
   }
 }
