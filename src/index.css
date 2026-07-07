@@ -448,15 +448,15 @@ body.loading {
 .mega-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 40px;
+  gap: 68px; /* Increased by 28px (within 24-32px range) to prevent a cramped look */
   width: 100%;
-  max-width: 820px; /* Reduced by ~19.5% to shrink cards and leave more whitespace */
+  max-width: 945px; /* Adjust max-width to increase card width by ~9.3% */
   z-index: 2;
 }
 
 .mega-grid.cols-2 {
   grid-template-columns: repeat(2, 1fr);
-  max-width: 533px; /* Reduced proportionally to match the card size of the 3-column dropdowns */
+  max-width: 607px; /* Adjusted proportionally to keep the same card width as the 3-column dropdowns */
 }
 
 .mega-card {
@@ -468,7 +468,7 @@ body.loading {
 
 .mega-img-wrapper {
   width: 100%;
-  height: auto;
+  aspect-ratio: 1 / 1; /* Force square ratio to ensure perfect alignment */
   background: transparent;
   border: none;
   border-radius: 0;
@@ -481,9 +481,8 @@ body.loading {
 
 .mega-img-wrapper img {
   width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain; /* Prevent cropping, maintain original aspect ratio of transparent PNGs */
   border-radius: 4px; /* subtle rounded corners */
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
