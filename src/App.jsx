@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Loader from './components/Loader.jsx';
 import Navbar from './components/Navbar.jsx';
 import Hero from './components/Hero.jsx';
+import BackgroundWatermark from './components/BackgroundWatermark.jsx';
 
 function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -21,6 +22,7 @@ function App() {
       <div id="app-container" className={showHero ? "visible" : "hidden"}>
         <Navbar isLoaded={showHero} />
         <Hero isLoaded={showHero} />
+        <BackgroundWatermark />
       </div>
     </>
   );
