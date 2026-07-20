@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import Loader from './components/Loader.jsx';
-import Navbar from './components/Navbar.jsx';
-import Hero from './components/Hero.jsx';
-import BackgroundWatermark from './components/BackgroundWatermark.jsx';
+
+const Navbar = lazy(() => import('./components/Navbar.jsx'));
+const Hero = lazy(() => import('./components/Hero.jsx'));
+const BackgroundWatermark = lazy(() => import('./components/BackgroundWatermark.jsx'));
 
 function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -19,11 +20,13 @@ function App() {
       )}
       
       {/* Main Website Container */}
-      <div id="app-container" className={showHero ? "visible" : "hidden"}>
-        <Navbar isLoaded={showHero} />
-        <Hero isLoaded={showHero} />
-        <BackgroundWatermark />
-      </div>
+      <Suspense fallback={null}>
+        <div id="app-container" className={showHero ? "visible" : "hidden"}>
+          <Navbar isLoaded={showHero} />
+          <Hero isLoaded={showHero} />
+          <BackgroundWatermark />
+        </div>
+      </Suspense>
     </>
   );
 }

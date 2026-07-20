@@ -272,35 +272,50 @@ function Loader({ onStartTransition, onLoaded }) {
       img2.onload = () => { shoe2Loaded = true; checkAssetsLoaded(); };
       img2.onerror = () => { shoe2Loaded = true; checkAssetsLoaded(); };
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', '/assets/video/One8.mp4', true);
-      xhr.responseType = 'blob';
+      // Set default video URL to stream
+      window.preloadedVideoUrl = '/assets/video/One8.mp4';
+
+      const tempVid = document.createElement('video');
+      tempVid.src = '/assets/video/One8.mp4';
+      tempVid.muted = true;
+      tempVid.playsInline = true;
       
-      xhr.onprogress = (e) => {
-        if (e.lengthComputable) {
-          videoTotalBytes = e.total;
-          videoLoadedBytes = e.loaded;
+      tempVid.onprogress = () => {
+        if (tempVid.buffered.length > 0) {
+          const duration = tempVid.duration || 4;
+          const bufferedEnd = tempVid.buffered.end(tempVid.buffered.length - 1);
+          // A 2-second buffer is more than enough to transition instantly and play without stutter
+          const requiredBuffer = Math.min(duration, 2);
+          const bufferProgress = Math.min(1, bufferedEnd / requiredBuffer);
+          videoLoadedBytes = bufferProgress * 100;
+          videoTotalBytes = 100;
         }
       };
-      
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const videoBlob = xhr.response;
-          window.preloadedVideoUrl = URL.createObjectURL(videoBlob);
-        } else {
-          window.preloadedVideoUrl = '/assets/video/One8.mp4';
-        }
+
+      tempVid.oncanplay = () => {
         videoLoaded = true;
+        videoLoadedBytes = 100;
+        videoTotalBytes = 100;
+        checkAssetsLoaded();
+      };
+
+      tempVid.oncanplaythrough = () => {
+        videoLoaded = true;
+        videoLoadedBytes = 100;
+        videoTotalBytes = 100;
         checkAssetsLoaded();
       };
       
-      xhr.onerror = () => {
-        window.preloadedVideoUrl = '/assets/video/One8.mp4';
+      tempVid.onerror = () => {
+        // Fallback to instantly mark as loaded so user is not blocked
         videoLoaded = true;
+        videoLoadedBytes = 100;
+        videoTotalBytes = 100;
         checkAssetsLoaded();
       };
-      
-      xhr.send();
+
+      // Trigger load
+      tempVid.load();
     }
 
     // Main animation loop
@@ -378,11 +393,40 @@ function Loader({ onStartTransition, onLoaded }) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
       
-      // Update and draw particles
-      particles.forEach(p => {
+      // Update particles and group them by color to minimize fillStyle switches
+      const colorGroups = {};
+      
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
         p.update(time, emergence, formation, shimmer, dissolve, centerX, centerY, logoX, logoWidth);
-        p.draw(ctx);
-      });
+        
+        if (p.finalAlpha <= 0) continue;
+        
+        // Quantize alpha to 2 decimal places to limit the number of color groups
+        const alphaKey = Math.round(p.finalAlpha * 100) / 100;
+        if (alphaKey <= 0) continue;
+        
+        // Quantize color values to multiples of 4 to limit unique keys (virtually imperceptible visually)
+        const rKey = Math.round(p.finalR / 4) * 4;
+        const gKey = Math.round(p.finalG / 4) * 4;
+        const bKey = Math.round(p.finalB / 4) * 4;
+        
+        const colorKey = `rgba(${rKey},${gKey},${bKey},${alphaKey})`;
+        
+        if (!colorGroups[colorKey]) {
+          colorGroups[colorKey] = [];
+        }
+        colorGroups[colorKey].push(p);
+      }
+      
+      for (const color in colorGroups) {
+        ctx.fillStyle = color;
+        const group = colorGroups[color];
+        for (let i = 0; i < group.length; i++) {
+          const p = group[i];
+          ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        }
+      }
     }
 
     logoImg.src = '/assets/logo/one18.png';
