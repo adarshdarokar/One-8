@@ -5,9 +5,11 @@ function Navbar({ isLoaded }) {
   const [activeMenu, setActiveMenu] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const closeTimeout = useRef(null);
 
   const openMegaMenu = (menuType) => {
+    if (window.innerWidth <= 768) return; // Disable mega menu on mobile devices
     clearTimeout(closeTimeout.current);
     setActiveMenu(menuType);
     setMenuOpen(true);
@@ -43,30 +45,45 @@ function Navbar({ isLoaded }) {
 
   return (
     <header 
-      className={`navbar ${isLoaded ? 'visible' : ''} ${menuOpen ? 'menu-open' : ''} ${scrolled ? 'scrolled' : ''}`}
+      className={`navbar ${isLoaded ? 'visible' : ''} ${menuOpen ? 'menu-open' : ''} ${scrolled ? 'scrolled' : ''} ${mobileMenuOpen ? 'mobile-menu-active' : ''}`}
       onMouseLeave={requestMenuClose}
       onMouseEnter={cancelMenuClose}
     >
       <div className="nav-container">
-        {/* Left Side: Navigation Links */}
+        {/* Left Side: Hamburger on mobile, Desktop links on desktop */}
         <div className="nav-left">
-          {['featured', 'women', 'men', 'calendar'].map((menu) => (
-            <a
-              key={menu}
-              href="#"
-              className={`nav-item ${activeMenu === menu ? 'active' : ''}`}
-              onMouseEnter={() => openMegaMenu(menu)}
-              onClick={(e) => {
-                e.preventDefault();
-                openMegaMenu(menu);
-              }}
-            >
-              {menu === 'featured' ? 'Featured' : 
-               menu === 'women' ? 'Women' : 
-               menu === 'men' ? 'Men' : 
-               menu === 'calendar' ? 'Release Calendar' : menu}
-            </a>
-          ))}
+          {/* Mobile Hamburger Toggle Button */}
+          <button 
+            className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+          </button>
+
+          {/* Wrapper to hold desktop navigation items */}
+          <div className="nav-desktop-links">
+            {['featured', 'women', 'men', 'calendar'].map((menu) => (
+              <a
+                key={menu}
+                href="#"
+                className={`nav-item ${activeMenu === menu ? 'active' : ''}`}
+                onMouseEnter={() => openMegaMenu(menu)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  openMegaMenu(menu);
+                }}
+              >
+                {menu === 'featured' ? 'Featured' : 
+                 menu === 'women' ? 'Women' : 
+                 menu === 'men' ? 'Men' : 
+                 menu === 'calendar' ? 'Release Calendar' : menu}
+              </a>
+            ))}
+          </div>
         </div>
         
         {/* Center: ONE8 Metallic Logo */}
@@ -99,6 +116,39 @@ function Navbar({ isLoaded }) {
             </svg>
             <span className="nav-icon-text">Cart</span>
           </button>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Drawer */}
+      <div className={`mobile-nav-drawer ${mobileMenuOpen ? 'open' : ''}`}>
+        <div className="mobile-nav-content">
+          <nav className="mobile-nav-list">
+            {['featured', 'women', 'men', 'calendar'].map((menu) => (
+              <a
+                key={menu}
+                href="#"
+                className="mobile-nav-item"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                {menu === 'featured' ? 'Featured' : 
+                 menu === 'women' ? 'Women' : 
+                 menu === 'men' ? 'Men' : 
+                 menu === 'calendar' ? 'Release Calendar' : menu}
+              </a>
+            ))}
+          </nav>
+          
+          <div className="mobile-nav-divider"></div>
+          
+          <div className="mobile-nav-extra">
+            <a href="#" className="mobile-extra-link" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); }}>About us</a>
+            <a href="#" className="mobile-extra-link" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); }}>My account</a>
+            <a href="#" className="mobile-extra-link" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); }}>Contact us</a>
+            <a href="#" className="mobile-extra-link" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); }}>Return & Exchange Portal</a>
+          </div>
         </div>
       </div>
 
