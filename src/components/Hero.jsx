@@ -1,13 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import HeroBackground from './HeroBackground.jsx';
 
+/**
+ * Hero Component for ONE8.
+ * Renders the top-level full-screen section with a media carousel (HeroBackground)
+ * and interactive bottom pagination dot indicators.
+ * Implements a smart slide rotation timer that changes slide durations dynamically
+ * depending on whether the active media is a short image or a longer video track.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isLoaded - Flag specifying if the loader has finished fadeout animations
+ */
 function Hero({ isLoaded }) {
+  // Current active slide index (0: Image 1, 1: Video, 2: Image 2)
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    // Slide 1 (Video) has 4s duration, Slide 0 and 2 (Images) have 2s duration
+    // Dynamic rotation timing:
+    // Video slide (Index 1) has a longer 4-second visibility to allow playback.
+    // Standard image slides (Index 0 and 2) rotate every 2 seconds.
     const duration = currentSlide === 1 ? 4000 : 2000;
 
     const timer = setTimeout(() => {
@@ -41,4 +54,5 @@ function Hero({ isLoaded }) {
   );
 }
 
-export default Hero;
+export default memo(Hero);
+

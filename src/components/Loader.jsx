@@ -2,15 +2,68 @@ import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
 
+// Register the CustomEase plugin from GSAP for custom easing curves
 gsap.registerPlugin(CustomEase);
 
-// Custom back ease for individual particles' overshoot
+// Color string cache to prevent GC (Garbage Collection) overhead from string allocations in the animation loop
+const colorCache = new Map();
+
+/**
+ * Fast RGBA color string generator that caches and reuses strings.
+ * Allocating thousands of temporary string objects per frame triggers high GC overhead,
+ * leading to periodic frame rate drops ("jank"). This function maps quantized color
+ * states to cached CSS color strings using a unique 31-bit integer key.
+ *
+ * @param {number} r - Red color channel quantized to multiples of 4 (0-255)
+ * @param {number} g - Green color channel quantized to multiples of 4 (0-255)
+ * @param {number} b - Blue color channel quantized to multiples of 4 (0-255)
+ * @param {number} a - Alpha channel quantized to 2 decimal places (0.0 - 1.0)
+ * @returns {string} The cached rgba CSS color string
+ */
+function getCachedRgba(r, g, b, a) {
+  // Compress alpha to 0-100 integer range (7 bits)
+  const aInt = Math.round(a * 100);
+  
+  // Pack channels into a single 31-bit integer key:
+  // Red (8 bits) | Green (8 bits) | Blue (8 bits) | Alpha (7 bits)
+  const key = (r << 23) | (g << 15) | (b << 7) | aInt;
+  
+  let colorStr = colorCache.get(key);
+  if (!colorStr) {
+    colorStr = `rgba(${r},${g},${b},${a})`;
+    colorCache.set(key, colorStr);
+  }
+  return colorStr;
+}
+
+/**
+ * Custom Back Ease-Out equation for individual particles' overshoot behavior.
+ * This function calculates the progression factor to overshoot the target position
+ * slightly and then settle back into place, mimicking structural tension.
+ *
+ * @param {number} t - Time progression normalized between 0 and 1
+ * @param {number} [c1=1.70158] - Overshoot intensity constant
+ * @returns {number} The eased progress multiplier
+ */
 function easeOutBack(t, c1 = 1.70158) {
   const c3 = c1 + 1;
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
 
+/**
+ * Represents a single dust-sized particle in the preloader canvas.
+ * Manages its coordinates, motion properties, and color channels across all preloader states.
+ */
 class LoaderParticle {
+  /**
+   * Create a particle.
+   * @param {number} tx - Target X coordinate where the particle forms the logo logo
+   * @param {number} ty - Target Y coordinate where the particle forms the logo
+   * @param {number} r - Original red channel value from image sample
+   * @param {number} g - Original green channel value from image sample
+   * @param {number} b - Original blue channel value from image sample
+   * @param {number} baseAlpha - Original alpha channel opacity (0-255)
+   */
   constructor(tx, ty, r, g, b, baseAlpha) {
     this.tx = tx;
     this.ty = ty;
@@ -23,24 +76,24 @@ class LoaderParticle {
     this.startX = Math.random() * window.innerWidth;
     this.startY = Math.random() * window.innerHeight;
     
-    // Ultra tiny dust-sized particles
+    // Ultra tiny dust-sized particles (0.6px to 1.6px) for an elegant premium feel
     this.size = Math.random() * 1.0 + 0.6;
     
-    // Delay arrival factor to create organic flow
+    // Delay arrival factor to create organic, flow-like assembly rather than instant snapping
     this.delay = Math.random() * 0.45;
     
-    // Overshoot variables
+    // Randomize overshoot amount per particle to vary the bounce effect
     this.overshootAmount = Math.random() * 1.2 + 0.5;
     
-    // Floating drift parameters
+    // Floating drift parameters (slow sinusoidal motion while drifting or idle)
     this.driftSpeed = Math.random() * 1.2 + 0.4;
     this.driftRange = Math.random() * 30 + 10;
     this.angleOffset = Math.random() * Math.PI * 2;
     
-    // Radial dispersion parameters for dissolve
+    // Radial dispersion parameters for the dissolve/explosion phase
     this.dissolveSpeed = Math.random() * 250 + 100;
     this.windX = (Math.random() - 0.5) * 80;
-    this.windY = -Math.random() * 120 - 40;
+    this.windY = -Math.random() * 120 - 40; // upward draft bias
     
     this.x = this.startX;
     this.y = this.startY;
@@ -51,12 +104,25 @@ class LoaderParticle {
     this.finalB = b;
   }
 
+  /**
+   * Update the particle position, color, and opacity according to the active timeline phase.
+   *
+   * @param {number} time - Elapsed time in seconds
+   * @param {number} emergence - Transition progress of the initial fade-in (0 to 1)
+   * @param {number} formation - Transition progress of logo assembly (0 to 1)
+   * @param {number} shimmer - Progress of the sweeping brightness shimmer effect (0 to 1)
+   * @param {number} dissolve - Progress of the radial explosion/fade-out (0 to 1)
+   * @param {number} centerX - Screen X coordinate of the logo center
+   * @param {number} centerY - Screen Y coordinate of the logo center
+   * @param {number} logoX - Screen X offset of the logo boundaries
+   * @param {number} logoWidth - Responsive logo width
+   */
   update(time, emergence, formation, shimmer, dissolve, centerX, centerY, logoX, logoWidth) {
-    // 1. Calculate drift
+    // 1. Calculate continuous floating drift (sinusoidal offset)
     const driftX = Math.sin(time * this.driftSpeed + this.angleOffset) * this.driftRange;
     const driftY = Math.cos(time * this.driftSpeed + this.angleOffset * 1.3) * this.driftRange;
     
-    // 2. Compute formation step
+    // 2. Compute formation step with custom back-ease overshoot curves
     let localT = (formation - this.delay) / (1 - this.delay);
     if (localT < 0) localT = 0;
     if (localT > 1) localT = 1;
@@ -66,7 +132,7 @@ class LoaderParticle {
     const formedX = (this.startX + driftX) * (1 - easeVal) + this.tx * easeVal;
     const formedY = (this.startY + driftY) * (1 - easeVal) + this.ty * easeVal;
     
-    // 3. Shimmer calculation
+    // 3. Shimmer calculation (sweeps a bright spotlight overlay across the formed logo)
     let shimmerBoost = 0;
     if (shimmer > 0 && shimmer < 1) {
       const sweepX = logoX - 60 + shimmer * (logoWidth + 120);
@@ -74,12 +140,13 @@ class LoaderParticle {
       const sweepRange = 50;
       if (distToSweep < sweepRange) {
         const factor = 1 - distToSweep / sweepRange;
-        shimmerBoost = factor * 0.7; // subtle brightness sweep
+        shimmerBoost = factor * 0.7; // subtle brightness sweep overlay
       }
     }
     
-    // 4. Position and alpha calculations by phase
+    // 4. Determine final position and alpha according to the current active phase
     if (dissolve > 0) {
+      // Phase 4: Dissolve (particles fly outwards from center and float upwards)
       const dx = this.tx - centerX;
       const dy = this.ty - centerY;
       const dist = Math.hypot(dx, dy) || 1;
@@ -94,22 +161,27 @@ class LoaderParticle {
       this.y = this.ty + disperseY + windYForce;
       this.alpha = this.baseAlpha * (1 - dissolve);
     } else if (formation > 0) {
+      // Phase 2 & 3: Logo formation and Shimmer hold
       this.x = formedX;
       this.y = formedY;
       this.alpha = this.baseAlpha * Math.min(localT * 2, 1);
     } else {
+      // Phase 1: Emergence (drifting cloud of loose particles starts fading in)
       this.x = this.startX + driftX;
       this.y = this.startY + driftY;
       this.alpha = this.baseAlpha * emergence;
     }
     
-    // Final values with shimmer boost
+    // Calculate final interpolated visual values with shimmer adjustments
     this.finalAlpha = Math.min(1, this.alpha + shimmerBoost * 0.3);
     this.finalR = Math.floor(Math.min(255, this.r + shimmerBoost * (255 - this.r) * 0.9));
     this.finalG = Math.floor(Math.min(255, this.g + shimmerBoost * (255 - this.g) * 0.9));
     this.finalB = Math.floor(Math.min(255, this.b + shimmerBoost * (255 - this.b) * 0.9));
   }
 
+  /**
+   * Draw particle to context (Note: call is bypassed in the optimized batch render loop below).
+   */
   draw(ctx) {
     if (this.finalAlpha <= 0) return;
     ctx.fillStyle = `rgba(${this.finalR}, ${this.finalG}, ${this.finalB}, ${this.finalAlpha})`;
@@ -117,7 +189,15 @@ class LoaderParticle {
   }
 }
 
-// Offscreen pixel sampling helper
+/**
+ * Samples a logo image file to fetch pixel coordinates and colors.
+ * Creates an offscreen Canvas, draws the logo inside, and filters for visible pixels.
+ *
+ * @param {HTMLImageElement} img - The preloaded HTML logo image
+ * @param {number} sampleWidth - The target width for sampling coordinates
+ * @param {number} sampleHeight - The target height for sampling coordinates
+ * @returns {Array<{x:number, y:number, r:number, g:number, b:number, alpha:number}>} List of sampled points
+ */
 function sampleLogo(img, sampleWidth, sampleHeight) {
   const offscreen = document.createElement('canvas');
   offscreen.width = sampleWidth;
@@ -129,7 +209,7 @@ function sampleLogo(img, sampleWidth, sampleHeight) {
   const data = imgData.data;
   
   const tempPoints = [];
-  const step = 3;
+  const step = 3; // Step interval for sampling density (higher = fewer particles, lower = dense)
   
   for (let y = 0; y < sampleHeight; y += step) {
     for (let x = 0; x < sampleWidth; x += step) {
@@ -139,6 +219,7 @@ function sampleLogo(img, sampleWidth, sampleHeight) {
       const b = data[idx + 2];
       const alpha = data[idx + 3];
       
+      // If the pixel is opaque enough, record it
       if (alpha > 40) {
         tempPoints.push({ x, y, r, g, b, alpha });
       }
@@ -147,6 +228,15 @@ function sampleLogo(img, sampleWidth, sampleHeight) {
   return tempPoints;
 }
 
+/**
+ * Preloader Component for ONE8.
+ * Renders an animated particle-based metallic logo assembly canvas overlay
+ * and loads website media assets in the background.
+ *
+ * @param {Object} props
+ * @param {Function} props.onStartTransition - Callback triggered when preloader animation reaches completion checkpoints
+ * @param {Function} props.onLoaded - Callback triggered when preloader fully unmounts
+ */
 function Loader({ onStartTransition, onLoaded }) {
   const canvasRef = useRef(null);
   const loaderContainerRef = useRef(null);
@@ -157,7 +247,7 @@ function Loader({ onStartTransition, onLoaded }) {
   const waitingRef = useRef(false);
 
   useEffect(() => {
-    // Register custom easing for luxury curves
+    // Register custom easing for luxury slide curves
     CustomEase.create("luxuryCurve", "0.16, 1, 0.3, 1");
 
     const canvas = canvasRef.current;
@@ -174,9 +264,8 @@ function Loader({ onStartTransition, onLoaded }) {
     let videoTotalBytes = 1;
     let videoLoadedBytes = 0;
 
-    // Timeline control parameters
+    // Timeline control parameters driven by GSAP
     const timeState = { time: 0 };
-    
     let lerpedProgress = 0;
 
     // Responsive size variables
@@ -187,6 +276,9 @@ function Loader({ onStartTransition, onLoaded }) {
     let centerX = 0;
     let centerY = 0;
 
+    /**
+     * Recalculates canvas size and particle positions relative to viewport size.
+     */
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -199,6 +291,7 @@ function Loader({ onStartTransition, onLoaded }) {
       centerX = logoX + logoWidth / 2;
       centerY = logoY + logoHeight / 2;
       
+      // Update coordinates for each particle mapping to the centered logo
       particles.forEach(p => {
         p.tx = logoX + (p.sourceX / 320) * logoWidth;
         p.ty = logoY + (p.sourceY / 120) * logoHeight;
@@ -209,22 +302,37 @@ function Loader({ onStartTransition, onLoaded }) {
       }
     }
 
-    window.addEventListener('resize', resizeCanvas);
+    // Throttle resize triggers using requestAnimationFrame to prevent rendering bottlenecks
+    let resizeScheduled = false;
+    function handleResize() {
+      if (resizeScheduled) return;
+      resizeScheduled = true;
+      requestAnimationFrame(() => {
+        resizeCanvas();
+        resizeScheduled = false;
+      });
+    }
 
-    // Create the GSAP animation timeline for first 3 phases
+    window.addEventListener('resize', handleResize);
+
+    // Create the GSAP animation timeline for the first 3 phases:
+    // Phase 1 (0.0s - 1.3s): Particle emergence
+    // Phase 2 (1.3s - 2.9s): Logo formation
+    // Phase 3 (2.9s - 3.7s): Shimmer hold
     const tl = gsap.timeline({
       paused: true
     });
 
-    // Animate from 0 to 3.7 seconds (emergence, formation, hold/shimmer)
+    // Linear progression of time parameter. Custom back-eases are computed per-particle.
     tl.to(timeState, {
       time: 3.7,
       duration: 3.7,
-      ease: "none" // Progression is linear, easing is handled per-particle
+      ease: "none"
     });
 
-    // Checkpoint at 3.7s (end of shimmer, logo complete)
+    // Checkpoint at 3.7s (End of logo formation and shimmer sweep)
     tl.call(() => {
+      // Pause timeline here if background assets have not finished preloading
       if (!assetsLoadedRef.current || currentProgressRef.current < 100) {
         tl.pause();
         waitingRef.current = true;
@@ -233,10 +341,13 @@ function Loader({ onStartTransition, onLoaded }) {
       }
     });
 
+    /**
+     * Triggers the final dissolve phase once loading progress hits 100% and checkpoints are cleared.
+     */
     function triggerDissolve() {
       waitingRef.current = false;
       
-      // Wait 0.3 seconds after reaching 100% before starting the dissolve phase
+      // Small pause (300ms) for visual balance before starting the dissolve animation
       gsap.delayedCall(0.3, () => {
         if (onStartTransition) onStartTransition();
         
@@ -247,20 +358,24 @@ function Loader({ onStartTransition, onLoaded }) {
           ease: "luxuryCurve",
           onComplete: () => {
             document.body.classList.remove('loading');
-            onLoaded(); // Cleanly unmount loader
+            onLoaded(); // Cleanly unmount loader from page DOM
           }
         });
       });
     }
 
+    /**
+     * Checks if all required image and video media assets are preloaded.
+     */
     function checkAssetsLoaded() {
       if (shoe1Loaded && shoe2Loaded && videoLoaded) {
         assetsLoadedRef.current = true;
-        // If we are waiting at 3.7s and the lerp reaches 100, triggerDissolve will fire from the animation loop
       }
     }
 
-    // Asset preloading
+    /**
+     * Preloads core assets (shoes WebP, high-res fallback JPEGs, and video tracks) in the background.
+     */
     function preloadAssets() {
       const img1 = new Image();
       img1.src = '/assets/Hero-Images/shoe.webp';
@@ -272,7 +387,7 @@ function Loader({ onStartTransition, onLoaded }) {
       img2.onload = () => { shoe2Loaded = true; checkAssetsLoaded(); };
       img2.onerror = () => { shoe2Loaded = true; checkAssetsLoaded(); };
 
-      // Set default video URL to stream
+      // Set global reference to play streaming files instantly
       window.preloadedVideoUrl = '/assets/video/One8.mp4';
 
       const tempVid = document.createElement('video');
@@ -284,7 +399,7 @@ function Loader({ onStartTransition, onLoaded }) {
         if (tempVid.buffered.length > 0) {
           const duration = tempVid.duration || 4;
           const bufferedEnd = tempVid.buffered.end(tempVid.buffered.length - 1);
-          // A 2-second buffer is more than enough to transition instantly and play without stutter
+          // A 2-second buffer threshold is enough to transition instantly and play smoothly
           const requiredBuffer = Math.min(duration, 2);
           const bufferProgress = Math.min(1, bufferedEnd / requiredBuffer);
           videoLoadedBytes = bufferProgress * 100;
@@ -307,26 +422,24 @@ function Loader({ onStartTransition, onLoaded }) {
       };
       
       tempVid.onerror = () => {
-        // Fallback to instantly mark as loaded so user is not blocked
+        // Fallback so users are not blocked on video loading issues
         videoLoaded = true;
         videoLoadedBytes = 100;
         videoTotalBytes = 100;
         checkAssetsLoaded();
       };
 
-      // Trigger load
       tempVid.load();
     }
 
-    // Main animation loop
-    let lastTime = Date.now();
-
+    /**
+     * Primary Canvas animation render loop running at screen frame rates.
+     */
     function animate() {
       animationId = requestAnimationFrame(animate);
       
       const now = Date.now();
       const time = now * 0.001;
-      lastTime = now;
       
       const t = timeState.time;
       let emergence = 0;
@@ -334,7 +447,7 @@ function Loader({ onStartTransition, onLoaded }) {
       let shimmer = 0;
       let dissolve = 0;
 
-      // Map timeState.time to individual phase parameters
+      // Map progress timeline to individual animation parameters
       if (t < 1.3) {
         emergence = t / 1.3;
       } else if (t < 2.9) {
@@ -351,7 +464,7 @@ function Loader({ onStartTransition, onLoaded }) {
         dissolve = (t - 3.7) / 0.8;
       }
       
-      // Calculate loading percentage
+      // Calculate visual progress percentages
       const timeProgress = (t / 3.7) * 100;
       let assetProgress = 0;
       if (shoe1Loaded) assetProgress += 5;
@@ -365,24 +478,24 @@ function Loader({ onStartTransition, onLoaded }) {
       const targetProgress = Math.min(timeProgress, assetProgress);
       currentProgressRef.current = targetProgress;
       
-      // Smooth lerp count-up
+      // Smooth lerp count-up for numbers
       lerpedProgress += (targetProgress - lerpedProgress) * 0.08;
       if (Math.abs(lerpedProgress - 100) < 0.1 && targetProgress >= 100) {
         lerpedProgress = 100;
       }
       
-      // Update DOM elements directly for high performance (bypass React render loop)
+      // Update DOM elements directly for maximum performance (skipping React render cycles)
       if (percentRef.current) {
         percentRef.current.textContent = `Loading ${Math.floor(lerpedProgress)}%`;
         percentRef.current.style.opacity = (1 - dissolve) * 0.35;
       }
       
-      // If we are waiting at 3.7s and the percentage reaches 100, trigger dissolve
+      // If we are currently paused/waiting and progress reaches 100%, trigger the dissolve state
       if (waitingRef.current && lerpedProgress >= 100 && assetsLoadedRef.current) {
         triggerDissolve();
       }
 
-      // Clear canvas with dissolving background opacity
+      // Clear canvas with dissolving background opacity transition
       if (dissolve > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const bgAlpha = Math.max(0, 1 - dissolve);
@@ -393,7 +506,7 @@ function Loader({ onStartTransition, onLoaded }) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
       
-      // Update particles and group them by color to minimize fillStyle switches
+      // Update particles and group them by color to minimize GPU state/fillStyle switches
       const colorGroups = {};
       
       for (let i = 0; i < particles.length; i++) {
@@ -402,16 +515,17 @@ function Loader({ onStartTransition, onLoaded }) {
         
         if (p.finalAlpha <= 0) continue;
         
-        // Quantize alpha to 2 decimal places to limit the number of color groups
+        // Quantize alpha to 2 decimal places to restrict unique keys in the string builder
         const alphaKey = Math.round(p.finalAlpha * 100) / 100;
         if (alphaKey <= 0) continue;
         
-        // Quantize color values to multiples of 4 to limit unique keys (virtually imperceptible visually)
+        // Quantize colors to multiples of 4 (imperceptible visual difference, reduces uniqueness)
         const rKey = Math.round(p.finalR / 4) * 4;
         const gKey = Math.round(p.finalG / 4) * 4;
         const bKey = Math.round(p.finalB / 4) * 4;
         
-        const colorKey = `rgba(${rKey},${gKey},${bKey},${alphaKey})`;
+        // Retrieve color string from optimization cache (avoids string creation garbage collection spikes)
+        const colorKey = getCachedRgba(rKey, gKey, bKey, alphaKey);
         
         if (!colorGroups[colorKey]) {
           colorGroups[colorKey] = [];
@@ -419,6 +533,7 @@ function Loader({ onStartTransition, onLoaded }) {
         colorGroups[colorKey].push(p);
       }
       
+      // Batch-draw particles to canvas grouped by color
       for (const color in colorGroups) {
         ctx.fillStyle = color;
         const group = colorGroups[color];
@@ -429,6 +544,7 @@ function Loader({ onStartTransition, onLoaded }) {
       }
     }
 
+    // Set source for logo pixel extraction
     logoImg.src = '/assets/logo/one18.png';
     logoImg.onload = () => {
       const points = sampleLogo(logoImg, 320, 120);
@@ -446,7 +562,7 @@ function Loader({ onStartTransition, onLoaded }) {
     };
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', handleResize);
       if (animationId) {
         cancelAnimationFrame(animationId);
       }
@@ -500,3 +616,4 @@ function Loader({ onStartTransition, onLoaded }) {
 }
 
 export default Loader;
+

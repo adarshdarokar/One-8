@@ -1,5 +1,19 @@
-import React from 'react';
+import React, { memo } from 'react';
 
+/**
+ * MegaMenu Component for ONE8.
+ * Renders the full-screen desktop navigation overlay.
+ * Separated into a left grey sidebar nav with category subsections
+ * and a right grid content area rendering high-quality product assets
+ * based on the active navbar selection.
+ * Memoized to prevent re-renders unless categories or visibility flags transition.
+ *
+ * @param {Object} props
+ * @param {string|null} props.activeMenu - Selected category identifier ('featured', 'women', 'men', 'calendar', or null)
+ * @param {boolean} props.isOpen - Determines if the dropdown wrapper is visible
+ * @param {Function} props.onMouseEnter - Cancels close timeouts on mouse enter
+ * @param {Function} props.onMouseLeave - Initiates close delay on mouse exit
+ */
 function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
   return (
     <div 
@@ -10,11 +24,11 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
     >
       <div className="mega-menu-content">
         
-        {/* LEFT SIDEBAR SECTION */}
+        {/* LEFT SIDEBAR SECTION (Grey background sidebar containing quick-links and brand indicators) */}
         <div className="mega-menu-sidebar">
           <div className="sidebar-nav">
             
-            {/* Featured */}
+            {/* Featured Section Links */}
             <div className="sidebar-section">
               <span className={`sidebar-nav-title ${activeMenu === 'featured' ? 'active' : ''}`}>
                 Featured
@@ -29,7 +43,7 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
               )}
             </div>
 
-            {/* Women */}
+            {/* Women's Section Links */}
             <div className="sidebar-section">
               <span className={`sidebar-nav-title ${activeMenu === 'women' ? 'active' : ''}`}>
                 Women
@@ -45,7 +59,7 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
               )}
             </div>
 
-            {/* Men */}
+            {/* Men's Section Links */}
             <div className="sidebar-section">
               <span className={`sidebar-nav-title ${activeMenu === 'men' ? 'active' : ''}`}>
                 Men
@@ -61,7 +75,7 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
               )}
             </div>
 
-            {/* Release Calendar */}
+            {/* Release Calendar Subsection */}
             <div className="sidebar-section">
               <span className={`sidebar-nav-title ${activeMenu === 'calendar' ? 'active' : ''}`}>
                 Release Calendar
@@ -70,7 +84,7 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
 
           </div>
 
-          {/* Footer links at the bottom */}
+          {/* Footer links at the bottom of the sidebar */}
           <div className="sidebar-footer">
             <a href="#" className="sidebar-footer-link" onClick={(e) => e.preventDefault()}>About us</a>
             <a href="#" className="sidebar-footer-link" onClick={(e) => e.preventDefault()}>My account</a>
@@ -79,10 +93,10 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
           </div>
         </div>
 
-        {/* RIGHT CONTENT SECTION */}
+        {/* RIGHT CONTENT SECTION (Changes dynamically based on the parent's activeMenu state) */}
         <div className="mega-menu-main">
 
-          {/* Featured Panel Content */}
+          {/* Featured Panel Content Grid */}
           {activeMenu === 'featured' && (
             <div className="mega-grid">
               <div className="mega-card" onClick={(e) => e.preventDefault()}>
@@ -106,7 +120,7 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
             </div>
           )}
 
-          {/* Women Panel Content */}
+          {/* Women Panel Content Grid (Two-column layout block) */}
           {activeMenu === 'women' && (
             <div className="mega-grid cols-2">
               <div className="mega-card" onClick={(e) => e.preventDefault()}>
@@ -124,7 +138,7 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
             </div>
           )}
 
-          {/* Men Panel Content */}
+          {/* Men Panel Content Grid */}
           {activeMenu === 'men' && (
             <div className="mega-grid">
               <div className="mega-card" onClick={(e) => e.preventDefault()}>
@@ -148,7 +162,7 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
             </div>
           )}
 
-          {/* Release Calendar Panel Content */}
+          {/* Release Calendar Panel Content Grid (Preview product cards with wishlist buttons) */}
           {activeMenu === 'calendar' && (
             <div className="mega-grid">
               <div className="mega-card release-card" onClick={(e) => e.preventDefault()}>
@@ -197,4 +211,5 @@ function MegaMenu({ activeMenu, isOpen, onMouseEnter, onMouseLeave }) {
   );
 }
 
-export default MegaMenu;
+export default memo(MegaMenu);
+

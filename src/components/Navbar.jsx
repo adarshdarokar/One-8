@@ -1,41 +1,84 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MegaMenu from './MegaMenu.jsx';
 
+/**
+ * Navbar Component for ONE8.
+ * Renders the top navigation header containing link dropdowns (MegaMenu),
+ * branding logo, action buttons (search, wishlist, cart), and a responsive mobile side-drawer.
+ * Handles state transitions for scrolling triggers, drawer activation, and deferred menu close hover timers.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isLoaded - Determines whether the navbar should fade into view (post preloader)
+ */
 function Navbar({ isLoaded }) {
+  // Active category in the mega dropdown ('featured', 'women', 'men', 'calendar', or null)
   const [activeMenu, setActiveMenu] = useState(null);
+  // Tracks whether the desktop mega menu container is slide-opened
   const [menuOpen, setMenuOpen] = useState(false);
+  // Tracks if user has scrolled down >50px to apply high-contrast white background styles
   const [scrolled, setScrolled] = useState(false);
+  // Tracks mobile-only responsive sidebar nav drawer state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Ref timer used to defer menu closing (prevents menu flickering on tiny gaps during hover cursor movements)
   const closeTimeout = useRef(null);
 
-  const openMegaMenu = (menuType) => {
-    if (window.innerWidth <= 768) return; // Disable mega menu on mobile devices
+  /**
+   * Activates a specific category and slides open the MegaMenu overlay.
+   * Cancels any pending hover close timers.
+   * Disables mega menu interactions on mobile-sized viewports (<=768px).
+   *
+   * @param {string} menuType - Category name
+   */
+  const openMegaMenu = useCallback((menuType) => {
+    if (window.innerWidth <= 768) return;
     clearTimeout(closeTimeout.current);
     setActiveMenu(menuType);
     setMenuOpen(true);
-  };
+  }, []);
 
-  const requestMenuClose = () => {
+  /**
+   * Schedules a delayed closure of the MegaMenu.
+   * Provides a 150ms buffer to allow the cursor to traverse between navbar headers
+   * and the mega menu card contents without triggering rapid open/close transitions.
+   */
+  const requestMenuClose = useCallback(() => {
     clearTimeout(closeTimeout.current);
     closeTimeout.current = setTimeout(() => {
       setMenuOpen(false);
       setActiveMenu(null);
     }, 150);
-  };
+  }, []);
 
-  const cancelMenuClose = () => {
+  /**
+   * Cancels any pending deferred menu closures (e.g. when cursor returns to nav elements).
+   */
+  const cancelMenuClose = useCallback(() => {
     clearTimeout(closeTimeout.current);
-  };
+  }, []);
 
+  // Monitor window scroll coordinates to toggle solid navigation bar styles
   useEffect(() => {
+    let scrollScheduled = false;
+
+    /**
+     * Scroll handler throttled via requestAnimationFrame.
+     * Prevents scroll events from blocking layout threads and causing paint lag.
+     */
     const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      if (scrollScheduled) return;
+      scrollScheduled = true;
+      requestAnimationFrame(() => {
+        if (window.scrollY > 50) {
+          setScrolled(true);
+        } else {
+          setScrolled(false);
+        }
+        scrollScheduled = false;
+      });
     };
-    window.addEventListener('scroll', handleScroll);
+
+    // Register with passive option to boost scrolling performance on touch devices
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       clearTimeout(closeTimeout.current);
@@ -50,12 +93,12 @@ function Navbar({ isLoaded }) {
       onMouseEnter={cancelMenuClose}
     >
       <div className="nav-container">
-        {/* Left Side: Hamburger on mobile, Desktop links on desktop */}
+        {/* Left Side: Hamburger toggle on mobile viewports, Desktop links on desktop */}
         <div className="nav-left">
           {/* Mobile Hamburger Toggle Button */}
           <button 
             className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen(prev => !prev)}
             aria-label="Toggle mobile menu"
             aria-expanded={mobileMenuOpen}
           >
@@ -86,9 +129,9 @@ function Navbar({ isLoaded }) {
           </div>
         </div>
         
-        {/* Center: ONE8 Metallic Logo */}
+        {/* Center: ONE8 Metallic Branding Logo */}
         <div className="nav-center">
-          <a href="#" className="logo-link">
+          <a href="#" className="logo-link" onClick={(e) => e.preventDefault()}>
             <img src="/assets/logo/one18.png" alt="ONE8 Logo" className="nav-logo" />
           </a>
         </div>
@@ -152,7 +195,7 @@ function Navbar({ isLoaded }) {
         </div>
       </div>
 
-      {/* Mega Menu Overlay inside the Header */}
+      {/* Mega Menu Overlay inside the Header (Memoized component receiving stable callbacks) */}
       <MegaMenu 
         activeMenu={activeMenu} 
         isOpen={menuOpen} 
@@ -164,3 +207,4 @@ function Navbar({ isLoaded }) {
 }
 
 export default Navbar;
+
