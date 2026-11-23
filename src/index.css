@@ -331,7 +331,7 @@ body.loading {
   top: 0;
   left: 0;
   width: 100%;
-  height: 560px; /* Increased to accommodate full size images */
+  height: 580px; /* Proportionally sized to comfortably accommodate larger category cards */
   background: #ffffff; /* White background */
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   z-index: 900;
@@ -356,14 +356,15 @@ body.loading {
 
 /* LEFT SIDEBAR */
 .mega-menu-sidebar {
-  width: 320px;
+  width: 300px; /* Adjusted sidebar width matching original One8 desktop proportions */
   background: #f7f7f7; /* Grey sidebar */
   border-right: 1px solid #e5e5e5;
-  padding: 120px 40px 30px 60px; /* 60px left padding */
+  padding: 115px 32px 35px 60px; /* 60px left padding aligns with desktop navbar */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
+  flex-shrink: 0;
 }
 
 .sidebar-nav {
@@ -440,7 +441,7 @@ body.loading {
 .mega-menu-main {
   flex: 1;
   position: relative;
-  padding: 120px 60px 40px 60px; /* matches logo/header paddings */
+  padding: 115px 50px 35px 50px; /* Balanced spacing matching original One8 alignment */
   height: 100%;
   display: flex;
   align-items: center;
@@ -450,10 +451,10 @@ body.loading {
 /* WATERMARK */
 .watermark {
   position: absolute;
-  right: -140px;
-  bottom: -120px;
-  width: 320px;
-  height: 320px;
+  right: -130px;
+  bottom: -110px;
+  width: 340px;
+  height: 340px;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
@@ -480,15 +481,15 @@ body.loading {
 .mega-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 68px; /* Increased by 28px (within 24-32px range) to prevent a cramped look */
+  gap: 32px; /* Proportional gap matching original One8 layout, avoiding cramped card widths */
   width: 100%;
-  max-width: 945px; /* Adjust max-width to increase card width by ~9.3% */
+  max-width: 1140px; /* Increased max-width allowing category cards to scale up to ~360px */
   z-index: 2;
 }
 
 .mega-grid.cols-2 {
   grid-template-columns: repeat(2, 1fr);
-  max-width: 607px; /* Adjusted proportionally to keep the same card width as the 3-column dropdowns */
+  max-width: 750px; /* Proportionally matched to keep identical card size with 3-column grid */
 }
 
 .mega-card {
@@ -503,7 +504,7 @@ body.loading {
   aspect-ratio: 1 / 1; /* Force square ratio to ensure perfect alignment */
   background: transparent;
   border: none;
-  border-radius: 0;
+  border-radius: 8px; /* Original 8px rounded corners */
   display: block;
   position: relative;
   overflow: hidden;
@@ -514,8 +515,8 @@ body.loading {
 .mega-img-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Prevent cropping, maintain original aspect ratio of transparent PNGs */
-  border-radius: 4px; /* subtle rounded corners */
+  object-fit: contain; /* Scale smoothly and maintain original aspect ratio of transparent PNGs */
+  border-radius: 8px; /* Matching 8px rounded corners from original One8 design */
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -535,7 +536,7 @@ body.loading {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: #333333;
-  margin-top: 15px;
+  margin-top: 16px;
   transition: color var(--transition-fast);
 }
 
@@ -794,12 +795,17 @@ body.loading {
     display: none; /* Hide icon text labels on smaller viewports */
   }
   
-  .mega-menu-content {
-    padding: 110px 30px 40px 30px;
+  .mega-menu-sidebar {
+    width: 260px;
+    padding: 105px 25px 25px 30px;
+  }
+  
+  .mega-menu-main {
+    padding: 105px 30px 25px 30px;
   }
   
   .mega-grid {
-    gap: 20px;
+    gap: 24px;
   }
 
   .watermark {
