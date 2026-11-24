@@ -3,6 +3,7 @@ import Loader from './components/Loader.jsx';
 
 const Navbar = lazy(() => import('./components/Navbar.jsx'));
 const Hero = lazy(() => import('./components/Hero.jsx'));
+const WardrobeSection = lazy(() => import('./components/WardrobeSection.jsx'));
 const BackgroundWatermark = lazy(() => import('./components/BackgroundWatermark.jsx'));
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <div id="app-container" className={showHero ? "visible" : "hidden"}>
           <Navbar isLoaded={showHero} />
           <Hero isLoaded={showHero} />
+          <WardrobeSection />
           <BackgroundWatermark />
         </div>
       </Suspense>
