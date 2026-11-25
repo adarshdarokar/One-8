@@ -13,13 +13,13 @@
   --text-white: #ffffff;
   --text-dim: rgba(255, 255, 255, 0.6);
   --text-muted: rgba(255, 255, 255, 0.35);
-  
+
   --silver-accent: #dcdcdc;
   --silver-bright: #ffffff;
-  
+
   --font-luxury: 'Outfit', sans-serif;
   --font-ui: 'Inter', sans-serif;
-  
+
   --transition-slow: 1.2s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-medium: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-fast: 0.3s ease;
@@ -31,7 +31,8 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   background-color: var(--bg-primary);
   color: var(--text-white);
   font-family: var(--font-ui);
@@ -113,8 +114,15 @@ body.loading {
 }
 
 @keyframes pulse-slow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.9; }
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
 }
 
 /* ==========================================================================
@@ -146,10 +154,10 @@ body.loading {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   transform: translateY(-20px);
   opacity: 0;
-  transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 1.1s cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 0.3s ease,
-              border-color 0.3s ease;
+  transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1.1s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .navbar.visible {
@@ -197,7 +205,7 @@ body.loading {
 
 .navbar.menu-open .nav-logo,
 .navbar.scrolled .nav-logo {
-  filter: invert(1); /* Invert white logo to black logo */
+  filter: invert(1);
 }
 
 /* Ensure mobile menu active state keeps white logo, white icons, and white hamburger */
@@ -250,7 +258,7 @@ body.loading {
 }
 
 .nav-logo {
-  height: 42px; /* Increased from 32px by ~30% */
+  height: 42px;
   width: auto;
   object-fit: contain;
   transition: filter 0.3s ease, transform var(--transition-fast);
@@ -331,8 +339,8 @@ body.loading {
   top: 0;
   left: 0;
   width: 100%;
-  height: 580px; /* Proportionally sized to comfortably accommodate larger category cards */
-  background: #ffffff; /* White background */
+  height: 580px;
+  background: #ffffff;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   z-index: 900;
   transform: translateY(-100%);
@@ -351,15 +359,15 @@ body.loading {
   width: 100%;
   height: 100%;
   display: flex;
-  padding: 0; /* Split columns handle their own padding */
+  padding: 0;
 }
 
 /* LEFT SIDEBAR */
 .mega-menu-sidebar {
-  width: 300px; /* Adjusted sidebar width matching original One8 desktop proportions */
-  background: #f7f7f7; /* Grey sidebar */
+  width: 300px;
+  background: #f7f7f7;
   border-right: 1px solid #e5e5e5;
-  padding: 115px 32px 35px 60px; /* 60px left padding aligns with desktop navbar */
+  padding: 115px 32px 35px 60px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -390,7 +398,7 @@ body.loading {
 }
 
 .sidebar-nav-title.active {
-  color: #000000; /* Black titles when active */
+  color: #000000;
 }
 
 .sidebar-submenu {
@@ -441,7 +449,7 @@ body.loading {
 .mega-menu-main {
   flex: 1;
   position: relative;
-  padding: 115px 50px 35px 50px; /* Balanced spacing matching original One8 alignment */
+  padding: 115px 50px 35px 50px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -481,15 +489,15 @@ body.loading {
 .mega-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 32px; /* Proportional gap matching original One8 layout, avoiding cramped card widths */
+  gap: 32px;
   width: 100%;
-  max-width: 1140px; /* Increased max-width allowing category cards to scale up to ~360px */
+  max-width: 1140px;
   z-index: 2;
 }
 
 .mega-grid.cols-2 {
   grid-template-columns: repeat(2, 1fr);
-  max-width: 750px; /* Proportionally matched to keep identical card size with 3-column grid */
+  max-width: 750px;
 }
 
 .mega-card {
@@ -501,10 +509,10 @@ body.loading {
 
 .mega-img-wrapper {
   width: 100%;
-  aspect-ratio: 1 / 1; /* Force square ratio to ensure perfect alignment */
+  aspect-ratio: 1 / 1;
   background: transparent;
   border: none;
-  border-radius: 8px; /* Original 8px rounded corners */
+  border-radius: 8px;
   display: block;
   position: relative;
   overflow: hidden;
@@ -515,8 +523,8 @@ body.loading {
 .mega-img-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Scale smoothly and maintain original aspect ratio of transparent PNGs */
-  border-radius: 8px; /* Matching 8px rounded corners from original One8 design */
+  object-fit: contain;
+  border-radius: 8px;
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -613,7 +621,7 @@ body.loading {
 
 .hero-track {
   display: flex;
-  width: 400vw; /* 4 slides, each 100vw */
+  width: 400vw;
   height: 100%;
   will-change: transform;
 }
@@ -638,7 +646,7 @@ body.loading {
 }
 
 .hero-slide img.virat-img {
-  object-position: 72% 15%; /* Focal point for Virat's face */
+  object-position: 72% 15%;
 }
 
 .hero-slide video {
@@ -654,7 +662,7 @@ body.loading {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3); /* Exactly 30% dark overlay */
+  background: rgba(0, 0, 0, 0.3);
   z-index: 2;
   pointer-events: none;
 }
@@ -674,15 +682,63 @@ body.loading {
 }
 
 /* ==========================================================================
-   WARDROBE SECTION
+   WARDROBE & BANNER SECTIONS (HERO -> 13VH WHITE GAP -> VK BANNER -> 13VH WHITE GAP -> WARDROBE)
    ========================================================================== */
+
+.wardrobe-flow-wrapper {
+  position: relative;
+  width: 100%;
+  background-color: var(--bg-primary);
+  z-index: 10;
+}
+
+/* Equal 13vh pure white gaps */
+.section-white-gap {
+  width: 100%;
+  height: 13vh;
+  background-color: #ffffff;
+  display: block;
+}
+
+/* Slim full-width horizontal strip (Perk chocolate wrapper style: 180-220px desktop height) */
+.vk-banner-section {
+  position: relative;
+  width: 100%;
+  height: 200px; /* Inside 180-220px range */
+  background: linear-gradient(90deg, #a1785d 0%, #b88f73 30%, #a47b60 70%, #73553f 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vk-banner-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(25px) brightness(0.92);
+  transform: scale(1.15);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.vk-banner-image {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
 
 .wardrobe-section {
   position: relative;
   width: 100%;
   background-color: var(--bg-primary);
   overflow: hidden;
-  z-index: 10;
 }
 
 .wardrobe-image {
@@ -690,7 +746,19 @@ body.loading {
   height: auto;
   display: block;
   aspect-ratio: 1670 / 942;
-  object-fit: cover;
+  object-fit: contain;
+}
+
+@media (max-width: 1024px) {
+  .vk-banner-section {
+    height: 160px;
+  }
+}
+
+@media (max-width: 640px) {
+  .vk-banner-section {
+    height: clamp(90px, 24vw, 120px);
+  }
 }
 
 /* ==========================================================================
@@ -714,19 +782,19 @@ body.loading {
   width: 22px;
   height: 2px;
   background-color: rgba(255, 255, 255, 0.85);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
-              opacity 0.3s ease, 
-              background-color 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease,
+    background-color 0.3s ease;
 }
 
 /* Mobile Navigation Drawer styles */
 .mobile-nav-drawer {
   position: fixed;
-  top: 90px; /* height of header */
+  top: 90px;
   left: 0;
   width: 100%;
   height: calc(100vh - 90px);
-  background: var(--bg-primary); /* Dark background matching the page */
+  background: var(--bg-primary);
   z-index: 990;
   transform: translateY(-100%);
   opacity: 0;
@@ -763,7 +831,7 @@ body.loading {
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-white); /* Premium white text */
+  color: var(--text-white);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
@@ -774,7 +842,7 @@ body.loading {
 
 .mobile-nav-divider {
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.08); /* Subtle white divider */
+  background-color: rgba(255, 255, 255, 0.08);
   width: 100%;
 }
 
@@ -788,7 +856,7 @@ body.loading {
   font-family: var(--font-ui);
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--text-dim); /* Muted gray text */
+  color: var(--text-dim);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
@@ -802,28 +870,29 @@ body.loading {
     padding: 0 30px;
     height: 80px;
   }
-  
-  .nav-left, .nav-right {
+
+  .nav-left,
+  .nav-right {
     gap: 25px;
   }
-  
+
   .nav-desktop-links {
     gap: 25px;
   }
-  
+
   .nav-icon-text {
-    display: none; /* Hide icon text labels on smaller viewports */
+    display: none;
   }
-  
+
   .mega-menu-sidebar {
     width: 260px;
     padding: 105px 25px 25px 30px;
   }
-  
+
   .mega-menu-main {
     padding: 105px 30px 25px 30px;
   }
-  
+
   .mega-grid {
     gap: 24px;
   }
@@ -837,6 +906,7 @@ body.loading {
 }
 
 @media (max-width: 768px) {
+
   /* Adjust navbar height */
   .navbar {
     height: 75px;
@@ -866,53 +936,54 @@ body.loading {
     padding: 0;
     z-index: 1010;
   }
-  
+
   .mobile-menu-toggle.active .hamburger-line:nth-child(1) {
     transform: translateY(7px) rotate(45deg);
   }
-  
+
   .mobile-menu-toggle.active .hamburger-line:nth-child(2) {
     opacity: 0;
   }
-  
+
   .mobile-menu-toggle.active .hamburger-line:nth-child(3) {
     transform: translateY(-7px) rotate(-45deg);
   }
 
   .nav-desktop-links {
-    display: none; /* Hide desktop nav links */
+    display: none;
   }
-  
+
   .hero-section {
     padding: 0 20px;
   }
-  
+
   .hero-product-preview {
     display: none;
   }
-  
+
   .hero-title {
     font-size: 40px;
     margin-bottom: 20px;
   }
-  
+
   .hero-description {
     font-size: 14px;
     margin-bottom: 30px;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     gap: 15px;
     width: 100%;
   }
-  
-  .btn-premium, .btn-secondary {
+
+  .btn-premium,
+  .btn-secondary {
     width: 100%;
     justify-content: center;
     padding: 16px 20px;
   }
-  
+
   #loader-percentage {
     font-size: 30px;
   }
