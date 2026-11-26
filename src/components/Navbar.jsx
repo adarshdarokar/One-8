@@ -86,6 +86,38 @@ function Navbar({ isLoaded }) {
     };
   }, []);
 
+  // Synchronize body scroll-locking and handle device resize / Escape key for mobile menu
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.classList.add('mobile-menu-open');
+    } else {
+      document.body.classList.remove('mobile-menu-open');
+    }
+
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setMenuOpen(false);
+        setActiveMenu(null);
+      }
+    };
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.classList.remove('mobile-menu-open');
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <header 
       className={`navbar ${isLoaded ? 'visible' : ''} ${menuOpen ? 'menu-open' : ''} ${scrolled ? 'scrolled' : ''} ${mobileMenuOpen ? 'mobile-menu-active' : ''}`}
@@ -161,6 +193,13 @@ function Navbar({ isLoaded }) {
           </button>
         </div>
       </div>
+
+      {/* Mobile Navigation Backdrop Overlay */}
+      <div 
+        className={`mobile-nav-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
 
       {/* Mobile Navigation Drawer */}
       <div className={`mobile-nav-drawer ${mobileMenuOpen ? 'open' : ''}`}>

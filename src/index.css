@@ -36,15 +36,18 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-white);
   font-family: var(--font-ui);
+  overflow-x: clip;
   overflow-x: hidden;
   width: 100%;
+  max-width: 100%;
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Hide scrollbar during loading */
-body.loading {
+/* Hide scrollbar during loading or when mobile menu is active */
+body.loading,
+body.mobile-menu-open {
   overflow: hidden;
 }
 
@@ -135,6 +138,9 @@ body.loading {
   min-height: 100vh;
   position: relative;
   width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overflow-x: hidden;
   transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -219,6 +225,11 @@ body.loading {
 
 .navbar.mobile-menu-active .hamburger-line {
   background-color: var(--text-white) !important;
+}
+
+/* Ensure hamburger icon is dark/visible on solid white scrolled navbar */
+.navbar.scrolled:not(.mobile-menu-active) .hamburger-line {
+  background-color: #000000 !important;
 }
 
 .nav-container {
@@ -603,9 +614,38 @@ body.loading {
 
 .hero-section {
   position: relative;
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+}
+
+/* Hero Pagination Indicators */
+.hero-pagination {
+  position: absolute;
+  bottom: max(36px, env(safe-area-inset-bottom, 36px));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 10px 20px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 40;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 640px) {
+  .hero-pagination {
+    bottom: max(22px, env(safe-area-inset-bottom, 22px));
+    padding: 7px 14px;
+    gap: 10px;
+  }
 }
 
 /* Infinite Horizontal Background Track */
@@ -613,22 +653,22 @@ body.loading {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   z-index: 1;
   overflow: hidden;
 }
 
 .hero-track {
   display: flex;
-  width: 400vw;
+  width: 400%;
   height: 100%;
   will-change: transform;
 }
 
 .hero-slide {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -688,25 +728,32 @@ body.loading {
 .wardrobe-flow-wrapper {
   position: relative;
   width: 100%;
+  max-width: 100%;
   background-color: var(--bg-primary);
   z-index: 10;
+  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 /* Equal 13vh pure white gaps */
 .section-white-gap {
   width: 100%;
+  max-width: 100%;
   height: 13vh;
   background-color: #ffffff;
   display: block;
+  flex-shrink: 0;
 }
 
 /* Slim full-width horizontal strip (Perk chocolate wrapper style: 180-220px desktop height) */
 .vk-banner-section {
   position: relative;
   width: 100%;
+  max-width: 100%;
   height: 200px; /* Inside 180-220px range */
   background: linear-gradient(90deg, #a1785d 0%, #b88f73 30%, #a47b60 70%, #73553f 100%);
   overflow: hidden;
+  contain: paint;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -737,12 +784,14 @@ body.loading {
 .wardrobe-section {
   position: relative;
   width: 100%;
+  max-width: 100%;
   background-color: var(--bg-primary);
   overflow: hidden;
 }
 
 .wardrobe-image {
   width: 100%;
+  max-width: 100%;
   height: auto;
   display: block;
   aspect-ratio: 1670 / 942;
@@ -755,9 +804,15 @@ body.loading {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .vk-banner-section {
-    height: clamp(90px, 24vw, 120px);
+    height: clamp(100px, 20vw, 140px);
+  }
+}
+
+@media (max-width: 480px) {
+  .vk-banner-section {
+    height: clamp(75px, 24vw, 105px);
   }
 }
 
@@ -787,6 +842,28 @@ body.loading {
     background-color 0.3s ease;
 }
 
+/* Mobile Navigation Backdrop styles */
+.mobile-nav-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 980;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.mobile-nav-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Mobile Navigation Drawer styles */
 .mobile-nav-drawer {
   position: fixed;
@@ -794,6 +871,7 @@ body.loading {
   left: 0;
   width: 100%;
   height: calc(100vh - 90px);
+  height: calc(100dvh - 90px);
   background: var(--bg-primary);
   z-index: 990;
   transform: translateY(-100%);
@@ -801,6 +879,8 @@ body.loading {
   pointer-events: none;
   transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -862,9 +942,10 @@ body.loading {
 }
 
 .mobile-extra-link:hover {
-  color: #111111;
+  color: #ffffff;
 }
 
+/* Tablet Landscape & Laptops (<=1024px) */
 @media (max-width: 1024px) {
   .nav-container {
     padding: 0 30px;
@@ -873,28 +954,32 @@ body.loading {
 
   .nav-left,
   .nav-right {
-    gap: 25px;
+    gap: 22px;
   }
 
   .nav-desktop-links {
-    gap: 25px;
+    gap: 22px;
   }
 
   .nav-icon-text {
     display: none;
   }
 
+  .mega-menu-container {
+    height: 520px;
+  }
+
   .mega-menu-sidebar {
-    width: 260px;
-    padding: 105px 25px 25px 30px;
+    width: 250px;
+    padding: 100px 24px 25px 30px;
   }
 
   .mega-menu-main {
-    padding: 105px 30px 25px 30px;
+    padding: 100px 30px 25px 30px;
   }
 
   .mega-grid {
-    gap: 24px;
+    gap: 22px;
   }
 
   .watermark {
@@ -905,9 +990,46 @@ body.loading {
   }
 }
 
-@media (max-width: 768px) {
+/* Transition range for Tablet Portrait / Small Desktop (769px - 960px) */
+@media (max-width: 960px) and (min-width: 769px) {
+  .nav-container {
+    padding: 0 20px;
+    height: 75px;
+  }
 
-  /* Adjust navbar height */
+  .nav-desktop-links {
+    gap: 16px;
+  }
+
+  .nav-item {
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+  }
+
+  .nav-right {
+    gap: 16px;
+  }
+
+  .nav-logo {
+    height: 36px;
+  }
+
+  .mega-menu-sidebar {
+    width: 220px;
+    padding: 95px 18px 20px 20px;
+  }
+
+  .mega-menu-main {
+    padding: 95px 20px 20px 20px;
+  }
+
+  .mega-grid {
+    gap: 16px;
+  }
+}
+
+/* Tablet Portrait & Mobile (<=768px) */
+@media (max-width: 768px) {
   .navbar {
     height: 75px;
   }
@@ -920,6 +1042,7 @@ body.loading {
   .mobile-nav-drawer {
     top: 75px;
     height: calc(100vh - 75px);
+    height: calc(100dvh - 75px);
   }
 
   /* Hamburger toggle animation and visibility */
@@ -953,35 +1076,12 @@ body.loading {
     display: none;
   }
 
-  .hero-section {
-    padding: 0 20px;
+  .nav-right {
+    gap: 20px;
   }
 
-  .hero-product-preview {
-    display: none;
-  }
-
-  .hero-title {
-    font-size: 40px;
-    margin-bottom: 20px;
-  }
-
-  .hero-description {
-    font-size: 14px;
-    margin-bottom: 30px;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-  }
-
-  .btn-premium,
-  .btn-secondary {
-    width: 100%;
-    justify-content: center;
-    padding: 16px 20px;
+  .nav-logo {
+    height: 38px;
   }
 
   #loader-percentage {
@@ -993,5 +1093,89 @@ body.loading {
     height: 170px;
     right: -75px;
     bottom: -65px;
+  }
+}
+
+/* Standard Mobile (<=640px) */
+@media (max-width: 640px) {
+  .nav-container {
+    padding: 0 18px;
+  }
+
+  .nav-right {
+    gap: 16px;
+  }
+
+  .nav-logo {
+    height: 34px;
+  }
+}
+
+/* Small Mobile (<=480px) */
+@media (max-width: 480px) {
+  .navbar {
+    height: 65px;
+  }
+
+  .nav-container {
+    padding: 0 16px;
+    height: 65px;
+  }
+
+  .mobile-nav-drawer {
+    top: 65px;
+    height: calc(100vh - 65px);
+    height: calc(100dvh - 65px);
+  }
+
+  .mobile-nav-content {
+    padding: 30px 20px;
+    gap: 24px;
+  }
+
+  .mobile-nav-list {
+    gap: 18px;
+  }
+
+  .mobile-nav-item {
+    font-size: 16px;
+  }
+
+  .nav-logo {
+    height: 32px;
+  }
+
+  .nav-right {
+    gap: 12px;
+  }
+
+  #loader-percentage {
+    font-size: 26px;
+  }
+
+  .watermark {
+    width: 130px;
+    height: 130px;
+    right: -55px;
+    bottom: -45px;
+  }
+}
+
+/* Ultra-Compact Mobile (<=360px) */
+@media (max-width: 360px) {
+  .nav-container {
+    padding: 0 12px;
+  }
+
+  .nav-logo {
+    height: 28px;
+  }
+
+  .nav-right {
+    gap: 8px;
+  }
+
+  .mobile-nav-content {
+    padding: 24px 14px;
   }
 }
