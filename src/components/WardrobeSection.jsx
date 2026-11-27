@@ -182,12 +182,6 @@ function WardrobeSection() {
       <section className="vk-banner-section" aria-label="ONE8 with Virat Kohli">
         <img
           src="/assets/wordrobe/w-withvk.png"
-          alt=""
-          className="vk-banner-bg"
-          aria-hidden="true"
-        />
-        <img
-          src="/assets/wordrobe/w-withvk.png"
           alt="ONE8 with Virat Kohli"
           className="vk-banner-image"
           loading="lazy"
