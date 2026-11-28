@@ -722,7 +722,7 @@ body.mobile-menu-open {
 }
 
 /* ==========================================================================
-   WARDROBE & BANNER SECTIONS (HERO -> 13VH WHITE GAP -> VK BANNER -> 13VH WHITE GAP -> WARDROBE)
+   WARDROBE & BANNER SECTIONS (HERO -> WHITE GAP -> VK BANNER -> WHITE GAP -> WARDROBE)
    ========================================================================== */
 
 .wardrobe-flow-wrapper {
@@ -735,24 +735,23 @@ body.mobile-menu-open {
   overflow-x: hidden;
 }
 
-/* Equal 13vh pure white gaps */
+/* Balanced pure white gaps */
 .section-white-gap {
   width: 100%;
   max-width: 100%;
-  height: 13vh;
+  height: clamp(32px, 10vh, 120px);
   background-color: #ffffff;
   display: block;
   flex-shrink: 0;
 }
 
-/* Slim full-width horizontal strip (Perk chocolate wrapper style: 180-220px desktop height) */
+/* Slim full-width horizontal strip */
 .vk-banner-section {
   position: relative;
   width: 100%;
   max-width: 100%;
   height: 200px;
-  /* Inside 180-220px range */
-  background: linear-gradient(90deg, #a1785d 0%, #b88f73 30%, #a47b60 70%, #73553f 100%);
+  background-color: #ffffff;
   overflow: hidden;
   contain: paint;
   display: flex;
@@ -780,6 +779,8 @@ body.mobile-menu-open {
   max-width: 100%;
   object-fit: contain;
   display: block;
+  transform: scale(1.675);
+  transform-origin: center;
 }
 
 /* ONE8 Interactive Wardrobe Showcase Section */
